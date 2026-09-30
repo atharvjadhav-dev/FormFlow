@@ -99,6 +99,25 @@ services:
     networks:
       - formflow-network
 
+  formflow-migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    image: formflow-migrate:local
+    restart: "no"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://formflow_owner:formflow_dev@postgres:5432/formflow
+      - APP_DATABASE_URL=postgresql://formflow_app:formflow_app_dev@postgres:5432/formflow
+      - SERVICE_DATABASE_URL=postgresql://formflow_service:formflow_service_dev@postgres:5432/formflow
+      - APP_DB_PASSWORD=formflow_app_dev
+      - SERVICE_DB_PASSWORD=formflow_service_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - formflow-network
+
 volumes:
   postgres_data:
   redis_data:

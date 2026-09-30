@@ -62,7 +62,22 @@ export async function runMigrations() {
     if (fs.existsSync(migration0Path)) {
       console.log(`📦 Applying table definitions from ${migration0Path}...`);
       const schemaSql = fs.readFileSync(migration0Path, 'utf8');
-      await client.query(schemaSql);
+      const statements = schemaSql
+        .split('--> statement-breakpoint')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      for (const statement of statements) {
+        try {
+          await client.query(statement);
+        } catch (err: any) {
+          // Idempotent: Ignore 42710 (duplicate_object) and 42P07 (duplicate_table)
+          if (err.code === '42710' || err.code === '42P07') {
+            continue;
+          }
+          throw err;
+        }
+      }
       console.log('✅ Base tables and enums ready.');
     } else {
       console.warn(`⚠️ Migration file not found at ${migration0Path}`);
