@@ -13,7 +13,7 @@ const isPublicRoute = createRouteMatcher([
   '/api/forms/(.*)', // their submit/presign endpoints — anonymous by design
   '/api/uploads/(.*)', // direct file uploads / downloads fallback
   '/api/webhooks/(.*)', // Clerk webhooks verify their own signature, not a session
-  '/api/health', // K8s probes and the ALB target group health check
+  '/api/health(.*)', // K8s probes, ALB target group, and liveness/readiness checks
 ]);
 
 const isOnboardingRoute = createRouteMatcher(['/onboarding(.*)']);

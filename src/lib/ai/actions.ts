@@ -107,7 +107,7 @@ export async function generateFormSchemaAction(
       };
     }
 
-    if (message.includes('unavailable') || message.includes('not configured')) {
+    if (message.includes('unavailable') || message.includes('not configured') || message.includes('configuration error')) {
       return {
         success: false,
         error: 'AI service is currently unavailable. Please try again later.',

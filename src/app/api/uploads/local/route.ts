@@ -36,6 +36,14 @@ export async function OPTIONS() {
 }
 
 export async function PUT(req: Request) {
+  // Reject local disk storage in production environments
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { message: 'Local file upload endpoint is disabled in production. Configure STORAGE_DRIVER=s3.' },
+      { status: 403 },
+    );
+  }
+
   try {
     const url = new URL(req.url);
     const key = url.searchParams.get('key');
@@ -70,6 +78,13 @@ export async function PUT(req: Request) {
 }
 
 export async function GET(req: Request) {
+  // Reject local disk retrieval in production environments
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Local file retrieval is disabled in production. Configure STORAGE_DRIVER=s3.', {
+      status: 403,
+    });
+  }
+
   try {
     const url = new URL(req.url);
     const key = url.searchParams.get('key');

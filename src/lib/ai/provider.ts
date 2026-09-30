@@ -4,7 +4,16 @@ import type { AiGenerationOptions, RawAiFormSchema } from './types';
 import { processAiModelOutput, AiSchemaValidationError } from './validator';
 
 function getEnvKey(name: string): string | undefined {
-  // Always check disk .env first so key updates in .env are reflected immediately without server restart
+  if (process.env.NODE_ENV === 'production') {
+    return process.env[name]?.trim();
+  }
+
+  // In non-production environments, check process.env first
+  if (process.env[name] !== undefined) {
+    return process.env[name]?.trim();
+  }
+
+  // Fallback to local .env disk file only for local development
   try {
     const envPath = path.resolve(process.cwd(), '.env');
     if (fs.existsSync(envPath)) {
@@ -13,14 +22,13 @@ function getEnvKey(name: string): string | undefined {
       if (match && match[1]) {
         const val = match[1].trim().replace(/^["']|["']$/g, '');
         if (val) {
-          process.env[name] = val;
           return val;
         }
       }
     }
   } catch {}
 
-  return process.env[name]?.trim();
+  return undefined;
 }
 
 export const AI_SYSTEM_PROMPT = `You are FormFlow Studio's AI Form Generation Engine.
@@ -440,11 +448,12 @@ export async function callAiModelForFormSchema(
     }
 
     if (lastError) {
-      console.warn('[ai-provider] Gemini API call failed, falling back to smart generator:', lastError.message);
-      if (process.env.NODE_ENV !== 'production' && !openaiKey) {
-        return generateDeterministicFallbackForm(userPrompt, options);
-      }
+      console.warn('[ai-provider] Gemini API call failed:', lastError.message);
       if (!openaiKey) {
+        if (process.env.MOCK_AI === 'true' || process.env.NODE_ENV === 'test' || process.env.NODE_ENV !== 'production') {
+          console.warn('[ai-provider] Falling back to deterministic mock generator in non-production environment');
+          return generateDeterministicFallbackForm(userPrompt, options);
+        }
         throw lastError;
       }
     }
@@ -497,7 +506,7 @@ export async function callAiModelForFormSchema(
         throw new Error('AI generation timed out. Please try again.');
       }
       console.warn('[ai-provider] OpenAI call error:', err.message);
-      if (process.env.NODE_ENV !== 'production') {
+      if (process.env.MOCK_AI === 'true' || process.env.NODE_ENV === 'test' || process.env.NODE_ENV !== 'production') {
         return generateDeterministicFallbackForm(userPrompt, options);
       }
       throw err;
@@ -505,10 +514,21 @@ export async function callAiModelForFormSchema(
   }
 
   // 3. Fallback / Test / Development Mode
-  // If no API key is configured or in dev, use the deterministic fallback generator so developers and evaluators can experience the full flow smoothly
-  if (process.env.NODE_ENV !== 'production' || process.env.MOCK_AI === 'true' || (!openaiKey && !geminiKey)) {
+  const isMockAllowed =
+    process.env.MOCK_AI === 'true' ||
+    process.env.NODE_ENV === 'test' ||
+    (process.env.NODE_ENV !== 'production' && !geminiKey && !openaiKey);
+
+  if (!openaiKey && !geminiKey) {
+    if (isMockAllowed) {
+      return generateDeterministicFallbackForm(userPrompt, options);
+    }
+    throw new Error('AI service configuration error: No AI provider credentials configured. In production, GEMINI_API_KEY (or OPENAI_API_KEY) must be provided.');
+  }
+
+  if (isMockAllowed) {
     return generateDeterministicFallbackForm(userPrompt, options);
   }
 
-  throw new Error('AI service is currently unavailable. Please configure OPENAI_API_KEY or GEMINI_API_KEY.');
+  throw new Error('AI service is currently unavailable. All configured providers failed to generate a response.');
 }

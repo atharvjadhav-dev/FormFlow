@@ -12,6 +12,8 @@
 
 # Production
 /build
+/dist/
+.worker-heartbeat
 
 # Misc
 .DS_Store
