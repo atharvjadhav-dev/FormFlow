@@ -67,6 +67,38 @@ services:
     networks:
       - formflow-network
 
+  formflow-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: formflow-worker:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      - NODE_ENV=production
+      - WORKER_HEALTH_PORT=8081
+      - DATABASE_URL=postgresql://formflow_owner:formflow_dev@postgres:5432/formflow
+      - APP_DATABASE_URL=postgresql://formflow_app:formflow_app_dev@postgres:5432/formflow
+      - SERVICE_DATABASE_URL=postgresql://formflow_service:formflow_service_dev@postgres:5432/formflow
+      - REDIS_URL=redis://redis:6379
+      - STORAGE_DRIVER=local
+      - AWS_REGION=ap-south-1
+      - SUBMISSIONS_QUEUE_URL=
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8081/health/live | grep -q '\"status\":\"ok\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - formflow-network
+
 volumes:
   postgres_data:
   redis_data:

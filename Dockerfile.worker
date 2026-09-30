@@ -1,0 +1,74 @@
+# ==============================================================================
+# FormFlow SQS Worker - Production Multi-Stage Dockerfile
+# ==============================================================================
+# - Multi-stage build on Node.js 20 Alpine
+# - Zero devDependencies / zero tsx in runner stage
+# - Standalone ESM worker execution: node dist/worker/index.js
+# - Non-root user: worker (UID 1001)
+# - Health server on WORKER_HEALTH_PORT=8081 (/health/live, /health/ready)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Stage 1: Base Alpine Image
+# ------------------------------------------------------------------------------
+FROM node:20-alpine AS base
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+
+# ------------------------------------------------------------------------------
+# Stage 2: Build Dependencies
+# ------------------------------------------------------------------------------
+FROM base AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# ------------------------------------------------------------------------------
+# Stage 3: Production-Only Dependencies (Prune devDependencies)
+# ------------------------------------------------------------------------------
+FROM deps AS prod-deps
+WORKDIR /app
+RUN npm prune --production
+
+# ------------------------------------------------------------------------------
+# Stage 4: Standalone Worker Compilation
+# ------------------------------------------------------------------------------
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY package.json tsconfig.json ./
+COPY src ./src
+COPY scripts ./scripts
+RUN npm run build:standalone
+
+# ------------------------------------------------------------------------------
+# Stage 5: Production Worker Runner
+# ------------------------------------------------------------------------------
+FROM base AS runner
+WORKDIR /app
+
+# Security: Create non-root system user and group
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 worker
+
+# Production runtime configuration
+ENV NODE_ENV=production
+ENV WORKER_HEALTH_PORT=8081
+
+# Copy only production dependencies and compiled standalone worker
+COPY --from=prod-deps --chown=worker:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=worker:nodejs /app/dist/worker ./dist/worker
+COPY --from=builder --chown=worker:nodejs /app/package.json ./package.json
+
+# Security: Run as non-root user
+USER worker
+
+# Expose worker health probe port
+EXPOSE 8081
+
+# Healthcheck for container orchestrators
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8081/health/live | grep -q '"status":"ok"' || exit 1
+
+# Runtime command: node dist/worker/index.js
+CMD ["node", "dist/worker/index.js"]

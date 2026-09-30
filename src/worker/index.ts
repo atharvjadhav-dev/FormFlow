@@ -151,13 +151,30 @@ async function pollOnce() {
 }
 
 async function main() {
-  if (!QUEUE_URL) {
-    console.error('[worker] SUBMISSIONS_QUEUE_URL not configured — exiting');
-    process.exit(1);
-  }
-
   healthServer = startHealthServer();
   recordHeartbeat();
+
+  if (!QUEUE_URL) {
+    console.error('[worker] SUBMISSIONS_QUEUE_URL not configured — exiting');
+    if (process.env.NODE_ENV === 'test' || !process.env.WORKER_HEALTH_PORT) {
+      if (healthServer) {
+        healthServer.close();
+      }
+      cleanupHeartbeatFile();
+      process.exit(1);
+    }
+
+    console.warn('[worker] Running in standby mode awaiting SQS queue configuration');
+    while (!shuttingDown) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    }
+    if (healthServer) {
+      healthServer.close();
+    }
+    cleanupHeartbeatFile();
+    console.log('[worker] stopped');
+    return;
+  }
 
   console.log('[worker] started, long-polling SQS');
   while (!shuttingDown) {
