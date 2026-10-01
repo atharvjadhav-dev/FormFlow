@@ -207,6 +207,7 @@ async function runProductionReadinessTests() {
     process.exit(1);
   } else {
     console.log('🎉 ALL PRODUCTION READINESS TESTS PASSED!');
+    process.exit(0);
   }
 }
 
