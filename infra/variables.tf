@@ -226,5 +226,12 @@ variable "sqs_receive_wait_time_seconds" {
   default     = 20
 }
 
+variable "domain_name" {
+  description = "The fully-qualified domain name for the FormFlow application"
+  type        = string
+  default     = "form-flow.atharvjadhav.xyz"
+}
+
+
 
 
