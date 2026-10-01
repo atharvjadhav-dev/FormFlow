@@ -192,3 +192,82 @@ output "target_group_name" {
   description = "The Name of the FormFlow Web Target Group"
   value       = aws_lb_target_group.web.name
 }
+
+output "acm_certificate_arn" {
+  description = "The ARN of the FormFlow ACM certificate"
+  value       = aws_acm_certificate.cert.arn
+}
+
+output "acm_certificate_domain" {
+  description = "The domain name of the FormFlow ACM certificate"
+  value       = aws_acm_certificate.cert.domain_name
+}
+
+output "acm_certificate_status" {
+  description = "The status of the FormFlow ACM certificate"
+  value       = aws_acm_certificate.cert.status
+}
+
+output "acm_validation_cname_name" {
+  description = "The CNAME name for ACM DNS validation (to add in Hostinger)"
+  value       = tolist(aws_acm_certificate.cert.domain_validation_options)[0].resource_record_name
+}
+
+output "acm_validation_cname_value" {
+  description = "The CNAME target value for ACM DNS validation (to add in Hostinger)"
+  value       = tolist(aws_acm_certificate.cert.domain_validation_options)[0].resource_record_value
+}
+
+output "https_listener_arn" {
+  description = "The ARN of the FormFlow ALB HTTPS Listener"
+  value       = aws_lb_listener.https.arn
+}
+
+output "cloudfront_acm_certificate_arn" {
+  description = "The ARN of the FormFlow CloudFront ACM certificate in us-east-1"
+  value       = aws_acm_certificate.cloudfront.arn
+}
+
+output "cloudfront_acm_certificate_status" {
+  description = "The status of the FormFlow CloudFront ACM certificate in us-east-1"
+  value       = aws_acm_certificate.cloudfront.status
+}
+
+output "cloudfront_acm_validation_cname_name" {
+  description = "The CNAME name for CloudFront ACM DNS validation in us-east-1"
+  value       = tolist(aws_acm_certificate.cloudfront.domain_validation_options)[0].resource_record_name
+}
+
+output "cloudfront_acm_validation_cname_value" {
+  description = "The CNAME target value for CloudFront ACM DNS validation in us-east-1"
+  value       = tolist(aws_acm_certificate.cloudfront.domain_validation_options)[0].resource_record_value
+}
+
+output "cloudfront_distribution_id" {
+  description = "The ID of the FormFlow CloudFront Distribution"
+  value       = aws_cloudfront_distribution.main.id
+}
+
+output "cloudfront_distribution_arn" {
+  description = "The ARN of the FormFlow CloudFront Distribution"
+  value       = aws_cloudfront_distribution.main.arn
+}
+
+output "cloudfront_domain_name" {
+  description = "The domain name of the FormFlow CloudFront Distribution"
+  value       = aws_cloudfront_distribution.main.domain_name
+}
+
+output "cloudfront_hosted_zone_id" {
+  description = "The CloudFront Route 53 zone ID (Z2FDTNDATAQYW2)"
+  value       = aws_cloudfront_distribution.main.hosted_zone_id
+}
+
+output "cloudfront_status" {
+  description = "The current deployment status of the CloudFront Distribution"
+  value       = aws_cloudfront_distribution.main.status
+}
+
+
+
+

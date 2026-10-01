@@ -822,13 +822,277 @@ Phase 4.8 establishes the external entry point for FormFlow application traffic 
 - **ASG Association**: Attached via `target_group_arns = [aws_lb_target_group.web.arn]` on `formflow-asg`.
 - **Health Check Type**: Kept as `EC2` on the ASG to prevent premature instance termination prior to container deployment.
 
-### 19.4 Strict Scope Boundaries Respected
-- **No NAT Gateway**: Preserves ~$32.40/month cost savings.
-- **No ACM / HTTPS**: TLS termination postponed to domain/CloudFront phase.
-- **No Route 53 / CloudFront**: Direct ALB DNS evaluation only.
-- **No WAF**: Avoids baseline AWS WAF hourly cost.
-- **No Application Deployment**: Code, containers, and deployment workflows remain deferred to subsequent deployment phases.
-- **Execution Mode**: `terraform fmt`, `terraform validate`, and `terraform plan` verified without applying changes.
+---
+
+## 20. Phase 4.9: SSM-Based Application Deployment & Production Verification
+
+### 20.1 Architecture & Workflow Overview
+Phase 4.9 deployed FormFlow production containers directly onto the existing EC2/ASG host (`i-0dc760f5cb3864cdd`) via AWS Systems Manager (SSM) without SSH keys, public bastion hosts, or external registry dependencies.
+
+```
+ [ Local / CI Operator ]
+          │ (AWS SSM Run-Command / TLS Encrypted)
+          ▼
+   [ AWS Systems Manager ]
+          │ (SSM Agent on EC2: i-0dc760f5cb3864cdd)
+          ▼
+   [ EC2 ARM64 Host /opt/formflow ]
+          ├── 1. Git Clone (github.com/atharvjadhav-dev/FormFlow.git)
+          ├── 2. Native Graviton ARM64 Image Compilation
+          ├── 3. Explicit DDL Migration Runner (formflow-migrate)
+          └── 4. Production Service Stack (Docker Compose)
+                 ├── formflow-web (0.0.0.0:3000 -> ALB Target Group)
+                 └── formflow-worker (127.0.0.1:8081 -> Internal SQS Consumer)
+```
+
+### 20.2 Key Architectural Decisions & Safeguards
+1. **ECR Dependency Elimination**:
+   - Detached obsolete `AmazonEC2ContainerRegistryReadOnly` policy from `formflow-ec2-role` via Terraform.
+   - Built native ARM64 images directly on the Graviton2 `t4g.small` instance in AWS, avoiding home internet upload bottlenecks and QEMU emulation overhead.
+2. **Swapfile Memory Buffer**:
+   - Configured a 2 GiB swapfile on the EBS root volume to ensure Next.js standalone and TypeScript builds execute reliably within `t4g.small`'s 2 GiB physical RAM without invoking Linux OOM killer.
+3. **Database Migration Isolation**:
+   - Database migrations executed strictly once as a standalone run-to-completion container (`formflow-migrate`).
+   - Idempotent schema verification (`0000_silent_unicorn.sql`), Postgres role creation (`formflow_app`, `formflow_service`), and RLS policies applied with 100% success.
+4. **VPC Network & Secret Security**:
+   - Zero hardcoded credentials committed to git.
+   - `/opt/formflow/.env` permissioned strictly at `600` (root-only).
+   - PostgreSQL connections configured with SSL (`?sslmode=no-verify` / `PGSSLMODE=no-verify`).
+   - ElastiCache Valkey connected with in-transit encryption (`rediss://`) and AUTH token.
+   - S3 direct presigned uploads and SQS queue URLs bound via IAM instance profile permissions.
+5. **ALB End-to-End Routing**:
+   - ALB Target Group `formflow-web-tg` transitioned to **Healthy** on port 3000.
+   - Public traffic verified via ALB DNS: `http://formflow-alb-326647237.ap-south-1.elb.amazonaws.com/api/health/live` returns HTTP 200 `{ status: "ok" }`.
+
+### 20.3 Verification Summary
+| Check | Target / Endpoint | Result |
+|---|---|---|
+| EC2 SSM Management | `i-0dc760f5cb3864cdd` | **Online** (Amazon Linux 2023 ARM64) |
+| Docker Daemon & Compose | Docker `25.0.6`, Compose `v2.29.7` | **Running** |
+| Image Architecture | `formflow-web`, `worker`, `migrate` | **aarch64 / arm64 native** |
+| Migration Runner | `dist/db/migrate.js` | **Exit Code 0** (RLS policies applied) |
+| Web Liveness | `localhost:3000/api/health/live` | **HTTP 200 OK** |
+| Web Readiness | `localhost:3000/api/health/ready` | **HTTP 200 OK** (RDS: 23ms, Valkey: 1ms) |
+| Worker Liveness | `127.0.0.1:8081/health/live` | **HTTP 200 OK** |
+| Worker Readiness | `127.0.0.1:8081/health/ready` | **HTTP 200 OK** (`queueConfigured: true`) |
+| ALB Target Health | `formflow-web-tg` (:3000) | **Healthy** |
+| Public ALB DNS | `formflow-alb-326647237.ap-south-1.elb.amazonaws.com` | **HTTP 200 OK** |
+
+---
+
+## 21. Phase 4.10: Production Secrets & Configuration (SSM Parameter Store)
+
+### 21.1 Architecture & Security Strategy
+In **Phase 4.10**, production secrets and runtime configuration were migrated from static, manually maintained files to **AWS Systems Manager Parameter Store** under the `/formflow/` namespace. Configuration is dynamically retrieved by deployment tooling and injected into the container environment at runtime.
+
+```
+       ┌────────────────────────────────────────────────────────┐
+       │         AWS Systems Manager Parameter Store            │
+       │                   Namespace: /formflow/*               │
+       ├──────────────────────────┬─────────────────────────────┤
+       │ String (Non-Sensitive)   │ SecureString (Encrypted)    │
+       │ - NODE_ENV, PORT, HOST   │ - DATABASE_URL              │
+       │ - STORAGE_DRIVER, BUCKET │ - APP_DATABASE_URL          │
+       │ - AWS_REGION, SQS_URL    │ - SERVICE_DATABASE_URL      │
+       │ - CLERK_PUBLISHABLE_KEY  │ - APP_DB_PASSWORD           │
+       │ - GEMINI_MODEL, PGSSLMODE│ - SERVICE_DB_PASSWORD       │
+       │ - WORKER_HEALTH_PORT     │ - REDIS_URL (AUTH Token)    │
+       │                          │ - CLERK_SECRET_KEY          │
+       │                          │ - CLERK_WEBHOOK_SECRET      │
+       │                          │ - GEMINI_API_KEY            │
+       └──────────────────────────┴─────────────────────────────┘
+                                  │
+                                  ▼
+      IAM Instance Profile Role: formflow-ec2-app-access
+      Scoped to: arn:aws:ssm:ap-south-1:081897152686:parameter/formflow/*
+      KMS Decrypt via service: ssm.ap-south-1.amazonaws.com
+                                  │
+                                  ▼
+               EC2 Host Deployment (/opt/formflow)
+                 ├── scripts/ssm-env-inject.py
+                 ├── Generates /opt/formflow/.env (chmod 600)
+                 └── docker compose -f docker-compose.prod.yml restart
+```
+
+### 21.2 IAM Least-Privilege Policy Updates
+The existing `formflow-ec2-app-access` policy was updated via Terraform to include strict, least-privilege permissions for SSM Parameter Store parameter retrieval and KMS decryption:
+- **SSM Read Access**:
+  - `ssm:GetParameter`, `ssm:GetParameters`, `ssm:GetParametersByPath`
+  - Scoped exclusively to `arn:aws:ssm:ap-south-1:081897152686:parameter/formflow/*`
+- **KMS Decryption**:
+  - `kms:Decrypt`
+  - Condition: `kms:ViaService = "ssm.ap-south-1.amazonaws.com"` (ensures KMS decrypt is only permitted through the SSM service in Mumbai).
+- **Terraform Status**: `terraform fmt`, `terraform validate`, and `terraform plan` clean (0 differences).
+
+### 21.3 Dynamic Deployment Injection Mechanism
+- **Injection Utility**: `scripts/ssm-env-inject.py`
+  - Retrieves all configuration and secrets dynamically at deployment time via the attached EC2 instance profile (`formflow-ec2-role`).
+  - Writes `/opt/formflow/.env` and enforces POSIX permissions `600` (`rw-------`).
+  - Zero hardcoded credentials in source control or Git.
+  - Zero sensitive values printed to console, logs, or reports (parameters logged by name and type only).
+- **Deployment Orchestrator**: `scripts/deploy-production.sh`
+  - Executes SSM parameter injection, validates file mode, restarts `docker compose -f docker-compose.prod.yml`, and executes automated health probes.
+
+### 21.4 Verification Summary
+| Verification Check | Target / Endpoint | Result |
+|---|---|---|
+| Environment File Permissions | `/opt/formflow/.env` | **Mode 600 (`rw-------`), Root-owned** |
+| Web Readiness Probe | `http://localhost:3000/api/health/ready` | **HTTP 200 OK** (RDS: 23ms, Valkey: 1ms) |
+| Worker Readiness Probe | `http://127.0.0.1:8081/health/ready` | **HTTP 200 OK** (`queueConfigured: true`) |
+| Amazon RDS Connectivity | PostgreSQL 16 on `formflow-postgres` | **Connected (23ms)** |
+| Amazon ElastiCache Connectivity | Valkey 7.2 on `formflow-cache` | **Connected (1ms)** |
+| Amazon S3 Storage | `formflow-submissions-production-081897152686` | **Upload, List, Delete: Verified** |
+| Amazon SQS Queue | `formflow-submissions` | **Send, Receive, Delete: Verified** |
+| ALB Target Health | `formflow-web-tg` (:3000) | **Healthy** |
+| Public ALB DNS | `formflow-alb-326647237.ap-south-1.elb.amazonaws.com` | **HTTP 200 OK** |
+| Git & Secret Hygiene | Working tree & commits | **Zero secrets in Git, Terraform, or Docker** |
+
+---
+
+## 22. Phase 4.11: ACM + HTTPS with Hostinger DNS
+
+### 22.1 Architecture & SSL/TLS Routing Strategy
+In **Phase 4.11**, FormFlow was secured with end-to-end SSL/TLS encryption using **AWS Certificate Manager (ACM)** and the existing **Application Load Balancer (ALB)**, with DNS managed entirely in **Hostinger** (zero Route 53 dependencies or monthly zone fees).
+
+```
+                     Client Web Browser
+                             │
+                             ▼ (HTTPS :443 / TLS 1.3)
+                  Hostinger DNS CNAME Record
+           form-flow.atharvjadhav.xyz  ──>  formflow-alb-326647237.ap-south-1.elb.amazonaws.com
+                             │
+                             ▼
+              Application Load Balancer (ALB)
+       ├── Port 80 Listener  ──> HTTP 301 Permanent Redirect to HTTPS :443
+       └── Port 443 Listener ──> ACM SSL Certificate (*.atharvjadhav.xyz)
+                                 Security Policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+                                 │
+                                 ▼ (HTTP :3000)
+                     Target Group: formflow-web-tg
+                                 │
+                                 ▼
+                     formflow-web Container (:3000)
+```
+
+### 22.2 ACM Certificate Details & DNS Validation
+- **Domain Name**: `form-flow.atharvjadhav.xyz`
+- **Certificate ARN**: `arn:aws:acm:ap-south-1:081897152686:certificate/0ad6b6e7-32c7-49f6-af5c-dde1a19361b5`
+- **Region**: `ap-south-1` (Mumbai)
+- **Status**: **`ISSUED`**
+- **Issuer**: Amazon Trust Services
+- **Validation Method**: DNS Validation
+- **Validation CNAME Record**:
+  - Name: `_cf3e419a9fd558ee2d1ec620349ba0f4.form-flow.atharvjadhav.xyz.`
+  - Value: `_c936b78463b01159dbfe7c4a5bd3910d.wzccmgtwzk.acm-validations.aws.`
+
+### 22.3 Load Balancer Listeners Configuration
+1. **HTTPS Listener (`aws_lb_listener.https`)**:
+   - Port: `443`
+   - Protocol: `HTTPS`
+   - Certificate: `aws_acm_certificate.cert.arn`
+   - SSL Policy: `ELBSecurityPolicy-TLS13-1-2-2021-06` (modern TLS 1.3 and 1.2 support)
+   - Default Action: Forward to `formflow-web-tg` (`arn:aws:elasticloadbalancing:ap-south-1:081897152686:targetgroup/formflow-web-tg/0d2b4b65611a3379`)
+2. **HTTP Listener (`aws_lb_listener.http`)**:
+   - Port: `80`
+   - Protocol: `HTTP`
+   - Default Action: `redirect` to Port `443`, Protocol `HTTPS`, Status Code `HTTP_301` (Permanent Redirect).
+
+### 22.4 Health & End-to-End Verification Summary
+| Verification Check | Target / Endpoint | Result |
+|---|---|---|
+| ACM Certificate Status | `form-flow.atharvjadhav.xyz` | **ISSUED** (Amazon Trust Services) |
+| Hostinger DNS Resolution | `form-flow.atharvjadhav.xyz` | **CNAME -> formflow-alb-326647237.ap-south-1.elb.amazonaws.com** |
+| HTTP to HTTPS Redirect | `http://form-flow.atharvjadhav.xyz/api/health/live` | **HTTP 301 Moved Permanently** -> `https://form-flow.atharvjadhav.xyz:443/api/health/live` |
+| HTTPS Web Liveness Probe | `https://form-flow.atharvjadhav.xyz/api/health/live` | **HTTP 200 OK** (`{"status":"ok",...}`) |
+| HTTPS Web Readiness Probe | `https://form-flow.atharvjadhav.xyz/api/health/ready` | **HTTP 200 OK** (`dependencies.database: connected`, `dependencies.redis: connected`) |
+| ALB Target Health | `formflow-web-tg` (:3000) | **Healthy** (`i-0dc760f5cb3864cdd`) |
+| Public Website Access | `https://form-flow.atharvjadhav.xyz/` | **HTTP 200 OK**, SSL Verification Result: `0` (Valid Trust Chain) |
+
+---
+
+## 23. Phase 4.12: CloudFront Edge Caching & Global CDN Distribution
+
+### 23.1 Architecture Overview
+In **Phase 4.12**, AWS CloudFront was deployed in front of the existing Application Load Balancer (ALB) to deliver high-performance global edge caching for Next.js static assets while safely proxying all dynamic routes, authentication, and API endpoints directly to the ALB origin over TLS.
+
+```
+                     Client Web Browser
+                             │
+                             ▼ (HTTPS :443 / TLS 1.3)
+                  Hostinger DNS CNAME Record
+          form-flow.atharvjadhav.xyz  ──>  d115dpxl54ig1o.cloudfront.net
+                             │
+                             ▼
+              AWS CloudFront Distribution (Global Edge)
+               Distribution ID: E3LD8O6P071SXA
+               Viewer Protocol: redirect-to-https
+               Viewer Certificate: us-east-1 ACM (TLS 1.2/1.3)
+                             │
+       ┌─────────────────────┴─────────────────────────┐
+       │                                               │
+ (Static Cache Hit)                            (Dynamic / Miss / API)
+       │                                               │
+       ▼                                               ▼ (HTTPS :443 / TLS 1.2)
+ Next.js Assets:                             Origin: formflow-alb-326647237.ap-south-1.elb.amazonaws.com
+ - /_next/static/*                           ALB HTTPS Listener (:443)
+ - /_next/image*                             ap-south-1 ACM Certificate (*.atharvjadhav.xyz)
+ (Cache: HIT, Age: > 0)                                │
+                                                       ▼
+                                             Target Group: formflow-web-tg (:3000)
+                                                       │
+                                                       ▼
+                                             EC2 Instance (Docker Compose Stack)
+```
+
+### 23.2 Multi-Region ACM Certificate Strategy
+- **CloudFront Viewer Certificate Requirement**: CloudFront distributions with custom domains require an SSL/TLS certificate provisioned strictly in the `us-east-1` (N. Virginia) region.
+- **ALB Origin Certificate Preservation**: The existing `ap-south-1` (Mumbai) ACM certificate remains attached to the ALB's HTTPS listener (:443), ensuring strict end-to-end encryption between CloudFront edge nodes and the ALB origin.
+- **Deterministic Validation**: Because both certificates cover `form-flow.atharvjadhav.xyz`, they shared the identical DNS validation CNAME record (`_cf3e419a9fd558ee2d1ec620349ba0f4.form-flow.atharvjadhav.xyz.`), allowing the `us-east-1` certificate to reach **`ISSUED`** status without creating any additional DNS records in Hostinger.
+
+### 23.3 Caching & Routing Policy Matrix
+
+| Path Pattern | Target Origin | Cache Policy | Origin Request Policy | Viewer Protocol | Description |
+|---|---|---|---|---|---|
+| `/_next/static/*` | `formflow-alb-origin` | `Managed-CachingOptimized` (`658327...`) | `Managed-AllViewer` (`216ade...`) | `redirect-to-https` | Immutable compiled JavaScript/CSS bundles cached globally at edge. |
+| `/_next/image*` | `formflow-alb-origin` | `Managed-CachingOptimized` (`658327...`) | `Managed-AllViewer` (`216ade...`) | `redirect-to-https` | Next.js optimized images cached with query parameters forwarded. |
+| `/api/*` | `formflow-alb-origin` | `Managed-CachingDisabled` (`4135ea...`) | `Managed-AllViewer` (`216ade...`) | `redirect-to-https` | Health, submissions, analytics, webhooks: zero caching, all headers & cookies passed. |
+| Default (`*`) | `formflow-alb-origin` | `Managed-CachingDisabled` (`4135ea...`) | `Managed-AllViewer` (`216ade...`) | `redirect-to-https` | Dynamic SSR pages, Clerk authentication callbacks, session headers preserved. |
+
+### 23.4 CloudFront Infrastructure Specifications
+- **Distribution ID**: `E3LD8O6P071SXA`
+- **CloudFront Domain**: `d115dpxl54ig1o.cloudfront.net`
+- **Custom Domain Alias**: `form-flow.atharvjadhav.xyz`
+- **Origin Domain**: `formflow-alb-326647237.ap-south-1.elb.amazonaws.com`
+- **Origin Protocol**: `https-only` (Port 443, TLSv1.2)
+- **Origin Read Timeout**: 30 seconds
+- **Price Class**: `PriceClass_100` (North America & Europe edge locations for minimal cost)
+- **HTTP/3 & IPv6**: Enabled
+- **us-east-1 ACM Certificate**: `arn:aws:acm:us-east-1:081897152686:certificate/44304a00-d0a7-461c-99bc-aff2ff8568b2` (`ISSUED`)
+- **ap-south-1 ACM Certificate**: `arn:aws:acm:ap-south-1:081897152686:certificate/0ad6b6e7-32c7-49f6-af5c-dde1a19361b5` (`ISSUED`, unchanged on ALB)
+
+### 23.5 Verification & Validation Summary
+| Verification Check | Endpoint / Target | Result | Detail |
+|---|---|---|---|
+| CloudFront Deployment Status | `aws_cloudfront_distribution.main` | **Deployed** | State: `Deployed`, Enabled: `true` |
+| CloudFront HTTP -> HTTPS | `http://form-flow.atharvjadhav.xyz/` | **HTTP 301** | `Location: https://form-flow.atharvjadhav.xyz/`, Server: `CloudFront` |
+| CloudFront Origin HTTPS | `formflow-alb-origin:443` | **Verified** | TLS 1.2 handshake and upstream certificate match |
+| FormFlow Homepage | `https://form-flow.atharvjadhav.xyz/` | **HTTP 200 OK** | Full HTML rendered with valid SSR metadata |
+| Liveness Probe | `https://.../api/health/live` | **HTTP 200 OK** | `X-Cache: Miss from cloudfront`, `status: ok` |
+| Readiness Probe | `https://.../api/health/ready` | **HTTP 200 OK** | `X-Cache: Miss from cloudfront`, DB: `27ms`, Redis: `1ms` |
+| Static Bundle Caching | `https://.../_next/static/...` | **HTTP 200 OK** | Request 1: `Miss from cloudfront`, Request 2: `Hit from cloudfront` (`Age: 2`) |
+| ALB Target Health | `formflow-web-tg` (:3000) | **Healthy** | Target `i-0dc760f5cb3864cdd` in service |
+| Compute & Data Services | EC2, Docker, RDS, Valkey, S3, SQS | **100% Healthy** | RDS: `available`, Valkey: `available`, S3: OK, SQS: 0 msgs |
+
+### 23.6 Hostinger DNS Cutover Instructions
+To route public production traffic through CloudFront edge caching, execute the following single record change in the Hostinger DNS zone editor:
+
+| Record Type | Host / Name | Target / Points To | Current Value | New Value | TTL |
+|---|---|---|---|---|---|
+| **CNAME** | `form-flow` | `d115dpxl54ig1o.cloudfront.net` | `formflow-alb-326647237.ap-south-1.elb.amazonaws.com` | **`d115dpxl54ig1o.cloudfront.net`** | `300` (or Default) |
+
+
+
+
 
 
 
