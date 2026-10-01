@@ -1,0 +1,31 @@
+services:
+  formflow-migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    image: formflow-migrate:local
+    restart: "no"
+    env_file:
+      - .env
+
+  formflow-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: formflow-web:local
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+
+  formflow-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: formflow-worker:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8081"
+    env_file:
+      - .env
