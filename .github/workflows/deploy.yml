@@ -1,0 +1,169 @@
+name: FormFlow CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Code Validation & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: TypeScript Typecheck
+        run: npm run typecheck
+
+      - name: Next.js & Standalone Build Verification
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZm9ybWZsb3cuZGV2JA
+          CLERK_SECRET_KEY: sk_test_dummy
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+          APP_DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+          SERVICE_DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+          REDIS_URL: rediss://default:dummy@localhost:6379
+          STORAGE_DRIVER: s3
+          SUBMISSIONS_BUCKET_NAME: dummy-bucket
+          AWS_REGION: ap-south-1
+          SUBMISSIONS_QUEUE_URL: https://sqs.ap-south-1.amazonaws.com/000000000000/dummy
+        run: npm run build
+
+  deploy:
+    name: Deploy to Production EC2 via SSM
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::081897152686:role/formflow-github-deploy-role
+          aws-region: ap-south-1
+
+      - name: Discover Active EC2 Instance
+        id: ec2
+        run: |
+          echo "Discovering active EC2 instance in ASG: formflow-asg..."
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:aws:autoscaling:groupName,Values=formflow-asg" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" \
+            --output text)
+
+          if [ -z "$INSTANCE_ID" ] || [ "$INSTANCE_ID" = "None" ]; then
+            echo "::error::No running EC2 instance found for ASG 'formflow-asg'."
+            exit 1
+          fi
+
+          echo "Target EC2 Instance: $INSTANCE_ID"
+          echo "instance_id=$INSTANCE_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch SSM Run Command Deployment
+        id: ssm
+        env:
+          INSTANCE_ID: ${{ steps.ec2.outputs.instance_id }}
+          TARGET_COMMIT: ${{ github.sha }}
+        run: |
+          echo "Dispatching deployment for commit $TARGET_COMMIT on instance $INSTANCE_ID..."
+
+          DEPLOY_CMD="cd /opt/formflow && git fetch origin main && git checkout $TARGET_COMMIT && bash /opt/formflow/scripts/deploy-production.sh $TARGET_COMMIT"
+
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "GitHub Actions deploy commit $TARGET_COMMIT" \
+            --parameters "commands=[\"$DEPLOY_CMD\"]" \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "SSM Command Dispatched. Command ID: $COMMAND_ID"
+          echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Monitor Deployment & Stream Logs
+        env:
+          COMMAND_ID: ${{ steps.ssm.outputs.command_id }}
+          INSTANCE_ID: ${{ steps.ec2.outputs.instance_id }}
+        run: |
+          echo "Awaiting completion of SSM command $COMMAND_ID..."
+
+          STATUS="Pending"
+          ATTEMPTS=0
+          MAX_ATTEMPTS=90 # 90 * 5s = 7.5 minutes max wait
+
+          while [ "$STATUS" = "Pending" ] || [ "$STATUS" = "InProgress" ] || [ "$STATUS" = "Delayed" ]; do
+            sleep 5
+            ATTEMPTS=$((ATTEMPTS + 1))
+            if [ $ATTEMPTS -ge $MAX_ATTEMPTS ]; then
+              echo "::error::Deployment timed out awaiting SSM command execution."
+              exit 1
+            fi
+
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$INSTANCE_ID" \
+              --query "Status" \
+              --output text 2>/dev/null || echo "Pending")
+            
+            if [ $((ATTEMPTS % 6)) -eq 0 ]; then
+              echo "Elapsed: $((ATTEMPTS * 5))s | Status: $STATUS"
+            fi
+          done
+
+          echo "=================================================="
+          echo "Deployment Finished with Status: $STATUS"
+          echo "=================================================="
+
+          echo "=== STDOUT LOGS ==="
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --query "StandardOutputContent" \
+            --output text
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "=== STDERR LOGS ==="
+            aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$INSTANCE_ID" \
+              --query "StandardErrorContent" \
+              --output text
+            echo "::error::SSM Deployment failed with status $STATUS"
+            exit 1
+          fi
+
+      - name: Verify Post-Deployment Health
+        run: |
+          echo "=== 1. Checking ALB Target Group Health ==="
+          TG_ARN=$(aws elbv2 describe-target-groups --names formflow-web-tg --query "TargetGroups[0].TargetGroupArn" --output text)
+          TARGET_STATE=$(aws elbv2 describe-target-health --target-group-arn "$TG_ARN" --query "TargetHealthDescriptions[0].TargetHealth.State" --output text)
+          echo "Target Health State: $TARGET_STATE"
+
+          echo "=== 2. Probing Public HTTPS Live Endpoint ==="
+          curl -sSf -k https://form-flow.atharvjadhav.xyz/api/health/live
+          echo ""
+
+          echo "=== 3. Probing Public HTTPS Ready Endpoint ==="
+          curl -sSf -k https://form-flow.atharvjadhav.xyz/api/health/ready
+          echo ""
+
+          echo "Deployment successfully verified over public HTTPS!"

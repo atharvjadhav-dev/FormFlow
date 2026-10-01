@@ -1090,6 +1090,80 @@ To route public production traffic through CloudFront edge caching, execute the 
 |---|---|---|---|---|---|
 | **CNAME** | `form-flow` | `d115dpxl54ig1o.cloudfront.net` | `formflow-alb-326647237.ap-south-1.elb.amazonaws.com` | **`d115dpxl54ig1o.cloudfront.net`** | `300` (or Default) |
 
+---
+
+## 24. Phase 4.13: GitHub Actions CI/CD with AWS OIDC & SSM Automation
+
+### 24.1 Architecture Overview
+Phase 4.13 automates the entire end-to-end production deployment lifecycle. Pushing code to `main` triggers automated TypeScript typechecking, builds, OpenID Connect (OIDC) authentication with AWS IAM (zero long-lived credentials), and secure orchestration via AWS Systems Manager (SSM) Run Command to the EC2 compute fleet.
+
+```
+     git push origin main
+             │
+             ▼
+ ┌────────────────────────────────────────────────────────┐
+ │           GitHub Actions CI/CD Workflow                │
+ │         (.github/workflows/deploy.yml)                 │
+ ├────────────────────────────────────────────────────────┤
+ │ 1. Code Validation & Build Verification                │
+ │    - npm ci                                            │
+ │    - npm run typecheck                                 │
+ │    - npm run build (Next.js + standalone artifacts)    │
+ │                                                        │
+ │ 2. Passwordless AWS Authentication (OIDC)              │
+ │    - aws-actions/configure-aws-credentials             │
+ │    - Role: formflow-github-deploy-role                 │
+ │    - Scoped to: repo:atharvjadhav-dev/FormFlow:ref... │
+ │                                                        │
+ │ 3. Deployment Dispatch & Monitoring                    │
+ │    - Discover running EC2 instance in ASG              │
+ │    - aws ssm send-command (AWS-RunShellScript)         │
+ │    - Polls SSM invocation status until completion      │
+ └───────────────────────────┬────────────────────────────┘
+                             │
+                             ▼ (AWS SSM Run Command / TLS)
+ ┌────────────────────────────────────────────────────────┐
+ │           Production EC2 Host (/opt/formflow)          │
+ │       Managed by scripts/deploy-production.sh          │
+ ├────────────────────────────────────────────────────────┤
+ │ 1. Git fetch and checkout of exact target commit SHA   │
+ │ 2. Parameter Store runtime injection into .env (0600)  │
+ │ 3. Native Graviton2 ARM64 Docker build on host         │
+ │ 4. Database migrations (formflow-migrate)              │
+ │ 5. Container launch (formflow-web, formflow-worker)    │
+ │ 6. Local liveness & readiness verification             │
+ │ 7. Updates .current_version for deployment tracking    │
+ └───────────────────────────┬────────────────────────────┘
+                             │
+                             ▼
+ ┌────────────────────────────────────────────────────────┐
+ │           Post-Deployment End-to-End Checks            │
+ │ 1. ALB Target Group health verification (:3000)        │
+ │ 2. Public HTTPS liveness probe (200 OK)                │
+ │ 3. Public HTTPS readiness probe (200 OK)               │
+ └────────────────────────────────────────────────────────┘
+```
+
+### 24.2 AWS IAM OIDC Federation & Security Hardening
+- **OIDC Provider**: `arn:aws:iam::081897152686:oidc-provider/token.actions.githubusercontent.com`
+- **IAM Deploy Role**: `formflow-github-deploy-role` (`arn:aws:iam::081897152686:role/formflow-github-deploy-role`)
+- **Trust Policy**:
+  - `StringEquals: token.actions.githubusercontent.com:aud = sts.amazonaws.com`
+  - `StringLike: token.actions.githubusercontent.com:sub = repo:atharvjadhav-dev/FormFlow:ref:refs/heads/main`
+- **Zero Access Keys**: No AWS Access Key ID or Secret Access Key is generated or stored in GitHub Secrets.
+- **Least-Privilege Scoping**:
+  - `ec2:DescribeInstances` & `autoscaling:DescribeAutoScalingGroups`
+  - `ssm:SendCommand` (scoped strictly to `AWS-RunShellScript` and EC2 instances)
+  - `ssm:GetCommandInvocation` & `ssm:DescribeInstanceInformation`
+  - `elasticloadbalancing:DescribeTargetHealth` & `elasticloadbalancing:DescribeTargetGroups`
+  - **Zero Access** to RDS credentials, S3 data, Parameter Store values, or infrastructure destroy operations.
+
+### 24.3 Versioning & Rollback Safety
+- Every deployment records the active Git commit SHA in `/opt/formflow/.current_version` alongside the deployment timestamp and previous version.
+- If a build or migration failure occurs, the SSM command fails immediately (`set -euo pipefail`), the deployment aborts, and the previous running containers remain untouched.
+- Rollbacks can be executed instantaneously by specifying any previous commit SHA:
+  `bash /opt/formflow/scripts/deploy-production.sh <PREVIOUS_COMMIT_SHA>`
+
 
 
 

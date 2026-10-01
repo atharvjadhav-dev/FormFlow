@@ -232,6 +232,14 @@ variable "domain_name" {
   default     = "form-flow.atharvjadhav.xyz"
 }
 
+variable "github_repo" {
+  description = "GitHub repository in owner/repo format for OIDC federation"
+  type        = string
+  default     = "atharvjadhav-dev/FormFlow"
+}
 
-
-
+variable "github_branch" {
+  description = "GitHub branch authorized to assume deployment IAM role"
+  type        = string
+  default     = "main"
+}

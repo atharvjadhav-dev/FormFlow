@@ -268,6 +268,12 @@ output "cloudfront_status" {
   value       = aws_cloudfront_distribution.main.status
 }
 
+output "github_actions_role_arn" {
+  description = "The ARN of the IAM role assumed by GitHub Actions for deployment"
+  value       = aws_iam_role.github_deploy.arn
+}
 
-
-
+output "github_actions_oidc_provider_arn" {
+  description = "The ARN of the GitHub Actions OIDC provider"
+  value       = aws_iam_openid_connect_provider.github_actions.arn
+}
