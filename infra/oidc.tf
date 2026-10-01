@@ -43,7 +43,10 @@ resource "aws_iam_role" "github_deploy" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:ref:refs/heads/${var.github_branch}"
+            "token.actions.githubusercontent.com:sub" = [
+              "repo:${var.github_repo}:ref:refs/heads/${var.github_branch}",
+              "repo:atharvjadhav-dev*/FormFlow*:ref:refs/heads/${var.github_branch}"
+            ]
           }
         }
       }
