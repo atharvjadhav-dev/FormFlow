@@ -1,0 +1,6 @@
+{
+  "commands": [
+    "docker --version",
+    "systemctl is-active docker"
+  ]
+}

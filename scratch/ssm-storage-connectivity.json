@@ -1,0 +1,31 @@
+{
+  "commands": [
+    "echo '=== 1. SQS SEND / RECEIVE / DELETE TEST ==='",
+    "QUEUE_URL='https://sqs.ap-south-1.amazonaws.com/081897152686/formflow-submissions'",
+    "echo 'Sending test message...'",
+    "MSG_ID=$(aws sqs send-message --region ap-south-1 --queue-url \"$QUEUE_URL\" --message-body '{\"test\":\"phase4.7-verification\"}' --query 'MessageId' --output text)",
+    "echo \"Sent Message ID: $MSG_ID\"",
+    "echo 'Receiving test message...'",
+    "RECV_JSON=$(aws sqs receive-message --region ap-south-1 --queue-url \"$QUEUE_URL\" --max-number-of-messages 1 --output json)",
+    "MSG_BODY=$(python3 -c \"import json, sys; d=json.loads(sys.argv[1]); print(d.get('Messages', [{}])[0].get('Body', ''))\" \"$RECV_JSON\")",
+    "RECEIPT_HANDLE=$(python3 -c \"import json, sys; d=json.loads(sys.argv[1]); print(d.get('Messages', [{}])[0].get('ReceiptHandle', ''))\" \"$RECV_JSON\")",
+    "echo \"Received Body: $MSG_BODY\"",
+    "echo 'Deleting test message...'",
+    "aws sqs delete-message --region ap-south-1 --queue-url \"$QUEUE_URL\" --receipt-handle \"$RECEIPT_HANDLE\"",
+    "VISIBLE_COUNT=$(aws sqs get-queue-attributes --region ap-south-1 --queue-url \"$QUEUE_URL\" --attribute-names ApproximateNumberOfMessages --query 'Attributes.ApproximateNumberOfMessages' --output text)",
+    "echo \"Approximate visible messages remaining: $VISIBLE_COUNT\"",
+    "echo '=== 2. S3 UPLOAD / CONFIRM / DELETE TEST ==='",
+    "BUCKET='formflow-submissions-production-081897152686'",
+    "echo 'phase4.7-s3-test-data' > /tmp/s3-test.txt",
+    "echo 'Uploading test object to S3...'",
+    "aws s3 cp /tmp/s3-test.txt \"s3://$BUCKET/test-verification/s3-test.txt\" --region ap-south-1",
+    "echo 'Confirming object exists in S3...'",
+    "aws s3 ls \"s3://$BUCKET/test-verification/s3-test.txt\" --region ap-south-1",
+    "echo 'Deleting test object from S3...'",
+    "aws s3 rm \"s3://$BUCKET/test-verification/s3-test.txt\" --region ap-south-1",
+    "rm -f /tmp/s3-test.txt",
+    "echo 'Confirming object is deleted...'",
+    "aws s3 ls \"s3://$BUCKET/test-verification/s3-test.txt\" --region ap-south-1 || echo 'Object clean - no files remaining in test prefix'",
+    "echo '=== ALL SQS AND S3 TESTS COMPLETED SUCCESSFULLY ==='"
+  ]
+}

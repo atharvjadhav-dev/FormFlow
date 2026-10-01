@@ -1,0 +1,47 @@
+# Example Terraform Variables for FormFlow
+aws_region          = "ap-south-1"
+project_name        = "FormFlow"
+environment         = "production"
+owner               = "FormFlow"
+managed_by          = "terraform"
+
+# Networking
+vpc_cidr                 = "10.0.0.0/16"
+public_subnet_cidr           = "10.0.1.0/24"
+public_secondary_subnet_cidr = "10.0.2.0/24"
+db_subnet_cidr               = "10.0.100.0/24"
+db_secondary_subnet_cidr     = "10.0.101.0/24"
+availability_zone            = "ap-south-1a"
+secondary_availability_zone  = "ap-south-1b"
+
+# Compute
+instance_type        = "t4g.small"
+ami_id               = "ami-0cf36b0c962e50fd7"
+asg_min_size         = 1
+asg_desired_capacity = 1
+asg_max_size         = 2
+
+# Database (PostgreSQL Single-AZ)
+db_instance_class          = "db.t4g.micro"
+db_engine_version          = "16.11"
+db_allocated_storage       = 20
+db_max_allocated_storage   = 50
+db_name                    = "formflow"
+db_username                = "formflow_owner"
+db_port                    = 5432
+db_backup_retention_period = 7
+
+# Cache (ElastiCache Valkey Single-Node)
+cache_node_type            = "cache.t4g.micro"
+cache_engine               = "valkey"
+cache_engine_version       = "7.2"
+cache_parameter_group_name = "default.valkey7"
+cache_port                 = 6379
+
+# Queue (SQS Submissions Queue)
+sqs_visibility_timeout        = 60
+sqs_message_retention_seconds = 345600
+sqs_receive_wait_time_seconds = 20
+
+
+

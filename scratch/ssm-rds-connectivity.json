@@ -1,0 +1,10 @@
+{
+  "commands": [
+    "echo '=== 1. DNS RESOLUTION ==='",
+    "getent hosts formflow-postgres.c5syaiy4ox3a.ap-south-1.rds.amazonaws.com",
+    "echo '=== 2. TCP PORT 5432 CONNECTIVITY (BASH SOCKET) ==='",
+    "timeout 5 bash -c '</dev/tcp/formflow-postgres.c5syaiy4ox3a.ap-south-1.rds.amazonaws.com/5432 && echo \"TCP Connection to RDS 5432: SUCCESS\" || echo \"TCP Connection to RDS 5432: FAILED\"'",
+    "echo '=== 3. TCP PORT 5432 CONNECTIVITY (PYTHON SOCKET) ==='",
+    "python3 -c \"import socket; s = socket.socket(); s.settimeout(5); s.connect(('formflow-postgres.c5syaiy4ox3a.ap-south-1.rds.amazonaws.com', 5432)); print('SUCCESS: Connected to peer', s.getpeername()); s.close()\""
+  ]
+}

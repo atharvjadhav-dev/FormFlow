@@ -1,0 +1,10 @@
+{
+  "commands": [
+    "echo '=== 1. DNS RESOLUTION ==='",
+    "getent hosts master.formflow-cache.disulj.aps1.cache.amazonaws.com",
+    "echo '=== 2. TCP PORT 6379 CONNECTIVITY ==='",
+    "python3 -c \"import socket; s = socket.socket(); s.settimeout(5); s.connect(('master.formflow-cache.disulj.aps1.cache.amazonaws.com', 6379)); print('SUCCESS: Connected to peer', s.getpeername()); s.close()\"",
+    "echo '=== 3. TLS HANDSHAKE & PROTOCOL VERIFICATION ==='",
+    "python3 -c \"import socket, ssl; ctx = ssl.create_default_context(); s = socket.socket(); s.settimeout(5); ss = ctx.wrap_socket(s, server_hostname='master.formflow-cache.disulj.aps1.cache.amazonaws.com'); ss.connect(('master.formflow-cache.disulj.aps1.cache.amazonaws.com', 6379)); print('TLS CIPHER:', ss.cipher()[0]); ss.sendall(b'PING\\r\\n'); resp = ss.recv(1024).decode(); print('VALKEY RESPONSE TO PING (expecting NOAUTH):', resp.strip()); ss.close()\""
+  ]
+}
