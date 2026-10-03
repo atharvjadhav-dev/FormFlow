@@ -37,7 +37,6 @@ jobs:
           DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
           APP_DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
           SERVICE_DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
-          REDIS_URL: rediss://default:dummy@localhost:6379
           STORAGE_DRIVER: s3
           SUBMISSIONS_BUCKET_NAME: dummy-bucket
           AWS_REGION: ap-south-1

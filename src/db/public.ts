@@ -2,13 +2,17 @@ import { and, desc, eq } from 'drizzle-orm';
 import { dbService } from './client';
 import { forms, formVersions, organizations, submissions, submissionFiles, auditLogs } from './schema';
 import { getFormAvailability } from '@/lib/availability';
-import { redis } from '@/lib/redis';
 import { enqueueSubmissionCreated } from '@/lib/sqs';
 
 const PUBLIC_FORM_CACHE_TTL_SECONDS = 30;
 
+const publicFormCache = new Map<
+  string,
+  { data: ReturnType<typeof serializePublicForm>; expiresAt: number }
+>();
+
 export async function invalidatePublicFormCache(slug: string) {
-  await redis.del(`form:public:${slug}`).catch(() => {}); // caching is an optimization, never a hard dependency
+  publicFormCache.delete(`form:public:${slug}`);
 }
 
 export type SubmitResult =
@@ -129,10 +133,10 @@ export async function submitToPublicForm(
  */
 export async function getPublicForm(slug: string) {
   const cacheKey = `form:public:${slug}`;
-  const cached = await redis.get(cacheKey).catch(() => null);
-  if (cached) {
-    const parsed = JSON.parse(cached) as ReturnType<typeof serializePublicForm>;
-    return deserializePublicForm(parsed);
+  const now = Date.now();
+  const cached = publicFormCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return deserializePublicForm(cached.data);
   }
 
   const [form] = await dbService.select().from(forms).where(eq(forms.slug, slug)).limit(1);
@@ -149,11 +153,11 @@ export async function getPublicForm(slug: string) {
 
   const result = { form, org, publishedVersion: publishedVersion ?? null };
 
-  // Cache even a "no published version" result — a not-yet-published form
-  // getting hammered shouldn't hit Postgres on every request either.
-  await redis
-    .set(cacheKey, JSON.stringify(serializePublicForm(result)), 'EX', PUBLIC_FORM_CACHE_TTL_SECONDS)
-    .catch(() => {});
+  // Cache in-memory with TTL
+  publicFormCache.set(cacheKey, {
+    data: serializePublicForm(result),
+    expiresAt: now + PUBLIC_FORM_CACHE_TTL_SECONDS * 1000,
+  });
 
   return result;
 }

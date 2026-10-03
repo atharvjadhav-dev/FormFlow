@@ -106,7 +106,7 @@ async function runProductionReadinessTests() {
     assert(validS3Passed, 'Valid STORAGE_DRIVER=s3 and bucket configuration passes');
 
     // ------------------------------------------------------------------------
-    // Test 4: /api/health/live does not require DB or Redis
+    // Test 4: /api/health/live does not require DB or external services
     // ------------------------------------------------------------------------
     console.log('\n--- 4. Liveness Probe Isolation ---');
     const liveResponse = await getLiveHealth();
@@ -114,11 +114,11 @@ async function runProductionReadinessTests() {
 
     assert(
       liveResponse.status === 200 && liveBody.status === 'ok' && typeof liveBody.uptime === 'number',
-      '/api/health/live responds 200 without DB/Redis dependency',
+      '/api/health/live responds 200 without DB dependency',
     );
 
     // ------------------------------------------------------------------------
-    // Test 5 & 6: /api/health/ready detects DB & Redis health
+    // Test 5 & 6: /api/health/ready detects DB health
     // ------------------------------------------------------------------------
     console.log('\n--- 5 & 6. Readiness Probe Dependency Verification ---');
     // Test readiness handler import
@@ -126,13 +126,12 @@ async function runProductionReadinessTests() {
     const readyResponse = await getReadyHealth();
     const readyBody = await readyResponse.json();
 
-    // In local dev environment with Docker running, Postgres and Redis are reachable
+    // In local dev environment with Docker running, Postgres is reachable
     if (readyResponse.status === 200) {
       assert(
         readyBody.status === 'ok' &&
-        readyBody.dependencies?.database?.status === 'connected' &&
-        readyBody.dependencies?.redis?.status === 'connected',
-        '/api/health/ready reports 200 when DB and Redis are connected',
+        readyBody.dependencies?.database?.status === 'connected',
+        '/api/health/ready reports 200 when DB is connected',
       );
     } else {
       assert(

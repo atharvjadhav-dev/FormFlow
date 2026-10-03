@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { dbService } from '@/db/client';
-import { redis } from '@/lib/redis';
 import { sql } from 'drizzle-orm';
 
 export const runtime = 'nodejs';
@@ -15,7 +14,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, errorMsg: string): Prom
 }
 
 /**
- * Readiness Probe: Checks whether critical runtime dependencies (PostgreSQL, Redis)
+ * Readiness Probe: Checks whether critical runtime dependencies (PostgreSQL)
  * are healthy and capable of serving traffic.
  *
  * Returns:
@@ -25,10 +24,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number, errorMsg: string): Prom
 export async function GET() {
   const checks: {
     database: { status: 'connected' | 'error'; latencyMs?: number; error?: string };
-    redis: { status: 'connected' | 'error'; latencyMs?: number; error?: string };
   } = {
     database: { status: 'error' },
-    redis: { status: 'error' },
   };
 
   let allReady = true;
@@ -51,31 +48,6 @@ export async function GET() {
       status: 'error',
       latencyMs: Date.now() - dbStart,
       error: err?.message || 'Database check failed',
-    };
-  }
-
-  // 2. Redis check
-  const redisStart = Date.now();
-  try {
-    const pingResult = await withTimeout(
-      redis.ping(),
-      TIMEOUT_MS,
-      'Redis ping timed out',
-    );
-    if (pingResult === 'PONG') {
-      checks.redis = {
-        status: 'connected',
-        latencyMs: Date.now() - redisStart,
-      };
-    } else {
-      throw new Error(`Unexpected Redis ping response: ${pingResult}`);
-    }
-  } catch (err: any) {
-    allReady = false;
-    checks.redis = {
-      status: 'error',
-      latencyMs: Date.now() - redisStart,
-      error: err?.message || 'Redis check failed',
     };
   }
 

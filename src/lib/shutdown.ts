@@ -1,11 +1,10 @@
 import { closeAllPools } from '@/db/client';
-import { redis } from '@/lib/redis';
 
 let isShuttingDown = false;
 
 /**
  * Registers process signal handlers (SIGTERM, SIGINT) to gracefully close
- * PostgreSQL connection pools and the Redis client when the server container stops.
+ * PostgreSQL connection pools when the server container stops.
  */
 export function setupGracefulShutdown() {
   if (typeof process === 'undefined') return;
@@ -33,13 +32,6 @@ export function setupGracefulShutdown() {
       console.log('[shutdown] Closing PostgreSQL connection pools...');
       await closeAllPools();
       console.log('[shutdown] PostgreSQL pools closed.');
-
-      console.log('[shutdown] Disconnecting Redis client...');
-      await redis.quit().catch((err) => {
-        console.warn('[shutdown] Redis quit warning, forcing disconnect:', err?.message || err);
-        redis.disconnect();
-      });
-      console.log('[shutdown] Redis client disconnected.');
 
       clearTimeout(forceExitTimer);
       console.log('[shutdown] Graceful cleanup finished. Process exiting cleanly.');
