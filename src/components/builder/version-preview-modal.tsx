@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import type { FormVersionItem } from '@/app/dashboard/forms/[formId]/actions';
 import { FieldRenderer } from '@/components/forms/field-renderer';
 import { X, RotateCcw, Calendar, CheckCircle2, Clock, ShieldAlert } from 'lucide-react';
@@ -13,6 +14,8 @@ interface VersionPreviewModalProps {
   isRestoring?: boolean;
 }
 
+const emptySubscribe = () => () => {};
+
 export function VersionPreviewModal({
   version,
   formName,
@@ -20,6 +23,23 @@ export function VersionPreviewModal({
   onRestore,
   isRestoring = false,
 }: VersionPreviewModalProps) {
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  if (!mounted) return null;
+
   const fields = version.schema?.fields ?? [];
   const formattedDate = new Date(version.createdAt).toLocaleString(undefined, {
     month: 'short',
@@ -29,11 +49,11 @@ export function VersionPreviewModal({
     minute: '2-digit',
   });
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 select-text" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-2xs transition-opacity"
+        className="fixed inset-0 bg-black/40 backdrop-blur-2xs transition-opacity animate-in fade-in duration-150"
         onClick={onClose}
       />
 
@@ -143,6 +163,7 @@ export function VersionPreviewModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

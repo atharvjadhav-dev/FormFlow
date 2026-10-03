@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect, useTransition, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { Trash2, Loader2, X } from 'lucide-react';
 import { deleteForm } from '@/app/dashboard/forms/actions';
@@ -11,6 +12,8 @@ interface DeleteFormDialogProps {
   submissionCount?: number;
 }
 
+const emptySubscribe = () => () => {};
+
 export function DeleteFormDialog({
   formId,
   formName,
@@ -20,6 +23,32 @@ export function DeleteFormDialog({
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen || isPending) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isPending]);
+
+  // Lock background scroll when open
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
 
   const handleDelete = () => {
     setError(null);
@@ -52,15 +81,23 @@ export function DeleteFormDialog({
         <span>Delete</span>
       </button>
 
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs animate-in fade-in duration-150"
-          onClick={() => !isPending && setIsOpen(false)}
-        >
+      {isOpen &&
+        mounted &&
+        createPortal(
           <div
-            className="relative w-full max-w-sm rounded-2xl border border-black/[0.08] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-2xs animate-in fade-in duration-150"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isPending) setIsOpen(false);
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Delete ${formName}`}
           >
+            <div
+              className="relative w-full max-w-sm rounded-2xl border border-black/[0.08] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
             <button
               type="button"
               onClick={() => setIsOpen(false)}
@@ -123,7 +160,8 @@ export function DeleteFormDialog({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

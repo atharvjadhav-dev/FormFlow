@@ -379,9 +379,10 @@ export async function callAiModelForFormSchema(
 
   // 1. Google Gemini Integration (Primary)
   if (geminiKey) {
+    const defaultModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-pro-latest'];
     const candidateModels = process.env.GEMINI_MODEL
-      ? [process.env.GEMINI_MODEL]
-      : ['gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-2.5-flash', 'gemini-pro-latest'];
+      ? Array.from(new Set([process.env.GEMINI_MODEL, ...defaultModels]))
+      : defaultModels;
 
     let lastError: Error | null = null;
 

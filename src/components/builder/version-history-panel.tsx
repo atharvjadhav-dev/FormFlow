@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
+import { createPortal } from 'react-dom';
 import {
   listFormVersions,
   restoreVersion,
@@ -309,76 +310,79 @@ export function VersionHistoryPanel({
       )}
 
       {/* Restore Confirmation Dialog */}
-      {versionToRestore && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-2xs"
-            onClick={() => !isRestoring && setVersionToRestore(null)}
-          />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-black/[0.08] space-y-4 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600 shrink-0">
-                <RotateCcw className="h-5 w-5" />
+      {versionToRestore &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 select-text" role="dialog" aria-modal="true">
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-2xs animate-in fade-in duration-150"
+              onClick={() => !isRestoring && setVersionToRestore(null)}
+            />
+            <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-black/[0.08] space-y-4 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-50 border border-amber-200/80 flex items-center justify-center text-amber-600 shrink-0">
+                  <RotateCcw className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-semibold text-[#1D1D1F]">
+                    Restore Version {versionToRestore.versionNumber}?
+                  </h3>
+                  <p className="text-xs text-[#86868B] leading-relaxed">
+                    Your current draft will be replaced by this version.
+                  </p>
+                  <p className="text-xs text-[#86868B] leading-relaxed">
+                    FormFlow will automatically create a safety snapshot of your current draft first so you can return to it at any time.
+                  </p>
+                </div>
               </div>
-              <div className="space-y-1">
-                <h3 className="text-base font-semibold text-[#1D1D1F]">
-                  Restore Version {versionToRestore.versionNumber}?
-                </h3>
-                <p className="text-xs text-[#86868B] leading-relaxed">
-                  Your current draft will be replaced by this version.
-                </p>
-                <p className="text-xs text-[#86868B] leading-relaxed">
-                  FormFlow will automatically create a safety snapshot of your current draft first so you can return to it at any time.
-                </p>
-              </div>
-            </div>
 
-            <div className="rounded-xl border border-black/[0.06] bg-[#F5F5F7] p-3 text-xs space-y-1">
-              <div className="flex justify-between text-[#86868B]">
-                <span>Version to restore:</span>
-                <span className="font-semibold text-[#1D1D1F]">Version {versionToRestore.versionNumber}</span>
+              <div className="rounded-xl border border-black/[0.06] bg-[#F5F5F7] p-3 text-xs space-y-1">
+                <div className="flex justify-between text-[#86868B]">
+                  <span>Version to restore:</span>
+                  <span className="font-semibold text-[#1D1D1F]">Version {versionToRestore.versionNumber}</span>
+                </div>
+                <div className="flex justify-between text-[#86868B]">
+                  <span>Fields in restored version:</span>
+                  <span className="font-semibold text-[#1D1D1F]">{versionToRestore.fieldCount} fields</span>
+                </div>
+                <div className="flex justify-between text-[#86868B]">
+                  <span>Public live form:</span>
+                  <span className="font-medium text-emerald-700">Remains unchanged until Publish</span>
+                </div>
               </div>
-              <div className="flex justify-between text-[#86868B]">
-                <span>Fields in restored version:</span>
-                <span className="font-semibold text-[#1D1D1F]">{versionToRestore.fieldCount} fields</span>
-              </div>
-              <div className="flex justify-between text-[#86868B]">
-                <span>Public live form:</span>
-                <span className="font-medium text-emerald-700">Remains unchanged until Publish</span>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                disabled={isRestoring}
-                onClick={() => setVersionToRestore(null)}
-                className="h-8 px-3.5 rounded-lg border border-black/[0.1] bg-white text-xs font-medium text-[#1D1D1F] hover:bg-black/[0.03] transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isRestoring}
-                onClick={handleConfirmRestore}
-                className="flex h-8 items-center gap-1.5 px-4 rounded-lg bg-[#007AFF] text-xs font-semibold text-white shadow-xs hover:bg-[#0071E3] transition-colors disabled:opacity-50"
-              >
-                {isRestoring ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    <span>Restoring version...</span>
-                  </>
-                ) : (
-                  <>
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    <span>Restore version</span>
-                  </>
-                )}
-              </button>
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={isRestoring}
+                  onClick={() => setVersionToRestore(null)}
+                  className="h-8 px-3.5 rounded-lg border border-black/[0.1] bg-white text-xs font-medium text-[#1D1D1F] hover:bg-black/[0.03] transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isRestoring}
+                  onClick={handleConfirmRestore}
+                  className="flex h-8 items-center gap-1.5 px-4 rounded-lg bg-[#007AFF] text-xs font-semibold text-white shadow-xs hover:bg-[#0071E3] transition-colors disabled:opacity-50"
+                >
+                  {isRestoring ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Restoring version...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      <span>Restore version</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

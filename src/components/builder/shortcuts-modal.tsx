@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Keyboard } from 'lucide-react';
+
+const emptySubscribe = () => () => {};
 
 export function ShortcutsModal({
   isOpen,
@@ -10,15 +13,29 @@ export function ShortcutsModal({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const [isMac, setIsMac] = useState(false);
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
+  const isMac = useSyncExternalStore(
+    emptySubscribe,
+    () => (typeof navigator !== 'undefined' ? /Mac|iPod|iPhone|iPad/.test(navigator.userAgent || navigator.platform) : false),
+    () => false,
+  );
+
+  // Close on Escape key
   useEffect(() => {
-    if (typeof navigator !== 'undefined') {
-      setIsMac(/Mac|iPod|iPhone|iPad/.test(navigator.userAgent || navigator.platform));
-    }
-  }, []);
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const mod = isMac ? '⌘' : 'Ctrl';
   const shift = isMac ? '⇧' : 'Shift';
@@ -38,8 +55,14 @@ export function ShortcutsModal({
     { key: '?', desc: 'Toggle shortcuts help' },
   ];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-2xs p-4 animate-in fade-in duration-150 select-text"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard Shortcuts"
+    >
       <div
         className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-black/[0.08] text-sm animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
@@ -75,6 +98,7 @@ export function ShortcutsModal({
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
