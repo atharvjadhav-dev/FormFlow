@@ -31,13 +31,6 @@ db_username                = "formflow_owner"
 db_port                    = 5432
 db_backup_retention_period = 7
 
-# Cache (ElastiCache Valkey Single-Node)
-cache_node_type            = "cache.t4g.micro"
-cache_engine               = "valkey"
-cache_engine_version       = "7.2"
-cache_parameter_group_name = "default.valkey7"
-cache_port                 = 6379
-
 # Queue (SQS Submissions Queue)
 sqs_visibility_timeout        = 60
 sqs_message_retention_seconds = 345600

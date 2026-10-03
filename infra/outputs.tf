@@ -103,31 +103,6 @@ output "rds_username" {
   value       = aws_db_instance.postgres.username
 }
 
-output "cache_security_group_id" {
-  description = "The ID of the FormFlow ElastiCache Security Group"
-  value       = aws_security_group.cache.id
-}
-
-output "cache_subnet_group_name" {
-  description = "The Name of the FormFlow ElastiCache Subnet Group"
-  value       = aws_elasticache_subnet_group.main.name
-}
-
-output "cache_replication_group_id" {
-  description = "The ID of the FormFlow ElastiCache Replication Group"
-  value       = aws_elasticache_replication_group.main.id
-}
-
-output "cache_primary_endpoint_address" {
-  description = "The primary endpoint address for the FormFlow ElastiCache cluster"
-  value       = aws_elasticache_replication_group.main.primary_endpoint_address
-}
-
-output "cache_port" {
-  description = "The listening port for the FormFlow ElastiCache cluster"
-  value       = aws_elasticache_replication_group.main.port
-}
-
 output "s3_bucket_name" {
   description = "The name of the FormFlow S3 submissions bucket"
   value       = aws_s3_bucket.submissions.id
@@ -221,51 +196,6 @@ output "acm_validation_cname_value" {
 output "https_listener_arn" {
   description = "The ARN of the FormFlow ALB HTTPS Listener"
   value       = aws_lb_listener.https.arn
-}
-
-output "cloudfront_acm_certificate_arn" {
-  description = "The ARN of the FormFlow CloudFront ACM certificate in us-east-1"
-  value       = aws_acm_certificate.cloudfront.arn
-}
-
-output "cloudfront_acm_certificate_status" {
-  description = "The status of the FormFlow CloudFront ACM certificate in us-east-1"
-  value       = aws_acm_certificate.cloudfront.status
-}
-
-output "cloudfront_acm_validation_cname_name" {
-  description = "The CNAME name for CloudFront ACM DNS validation in us-east-1"
-  value       = tolist(aws_acm_certificate.cloudfront.domain_validation_options)[0].resource_record_name
-}
-
-output "cloudfront_acm_validation_cname_value" {
-  description = "The CNAME target value for CloudFront ACM DNS validation in us-east-1"
-  value       = tolist(aws_acm_certificate.cloudfront.domain_validation_options)[0].resource_record_value
-}
-
-output "cloudfront_distribution_id" {
-  description = "The ID of the FormFlow CloudFront Distribution"
-  value       = aws_cloudfront_distribution.main.id
-}
-
-output "cloudfront_distribution_arn" {
-  description = "The ARN of the FormFlow CloudFront Distribution"
-  value       = aws_cloudfront_distribution.main.arn
-}
-
-output "cloudfront_domain_name" {
-  description = "The domain name of the FormFlow CloudFront Distribution"
-  value       = aws_cloudfront_distribution.main.domain_name
-}
-
-output "cloudfront_hosted_zone_id" {
-  description = "The CloudFront Route 53 zone ID (Z2FDTNDATAQYW2)"
-  value       = aws_cloudfront_distribution.main.hosted_zone_id
-}
-
-output "cloudfront_status" {
-  description = "The current deployment status of the CloudFront Distribution"
-  value       = aws_cloudfront_distribution.main.status
 }
 
 output "github_actions_role_arn" {

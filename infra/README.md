@@ -15,12 +15,11 @@ infra/
 ├── variables.tf             # Input variables with sensible production defaults
 ├── locals.tf                # Reusable local values and common tags
 ├── vpc.tf                   # VPC, Subnets (Public + Primary DB + Secondary DB), IGW, Route Tables
-├── security-groups.tf       # ALB, EC2, RDS, and ElastiCache Security Groups & zero-trust ingress rules
+├── security-groups.tf       # ALB, EC2, and RDS Security Groups & zero-trust ingress rules
 ├── iam.tf                   # EC2 IAM Role, Instance Profile, and ECR/SSM/S3/SQS policy attachments
 ├── launch-template.tf       # Graviton ARM64 launch template (t4g.small, 20 GiB gp3, Docker bootstrap)
 ├── autoscaling.tf           # Auto Scaling Group (min=1, desired=1, max=2) in ap-south-1a
 ├── rds.tf                   # RDS Subnet Group, random password generator, and PostgreSQL single-AZ instance
-├── elasticache.tf           # ElastiCache Subnet Group, AUTH token, and Valkey single-node cluster
 ├── s3.tf                    # S3 bucket, encryption, versioning, ownership, and lifecycle policies
 ├── sqs.tf                   # SQS submissions queue, dead-letter queue, and redrive policy
 ├── alb.tf                   # Application Load Balancer, target group (:3000), and HTTP listener (:80)

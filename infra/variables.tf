@@ -172,42 +172,6 @@ variable "db_maintenance_window" {
   default     = "Mon:04:00-Mon:05:00"
 }
 
-variable "cache_node_type" {
-  description = "ElastiCache node type"
-  type        = string
-  default     = "cache.t4g.micro"
-}
-
-variable "cache_engine" {
-  description = "Cache engine (valkey or redis)"
-  type        = string
-  default     = "valkey"
-}
-
-variable "cache_engine_version" {
-  description = "Cache engine version"
-  type        = string
-  default     = "7.2"
-}
-
-variable "cache_parameter_group_name" {
-  description = "ElastiCache parameter group name"
-  type        = string
-  default     = "default.valkey7"
-}
-
-variable "cache_port" {
-  description = "Cache listening port"
-  type        = number
-  default     = 6379
-}
-
-variable "cache_maintenance_window" {
-  description = "Weekly cache maintenance window (UTC)"
-  type        = string
-  default     = "sun:03:00-sun:04:00"
-}
-
 variable "sqs_visibility_timeout" {
   description = "SQS queue visibility timeout in seconds"
   type        = number
