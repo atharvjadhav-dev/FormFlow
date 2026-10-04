@@ -274,6 +274,7 @@ export interface VisibleIfRule {
 
 export interface FormField {
   id: string;
+  name?: string;
   type: FieldType;
   label: string;
   placeholder?: string;

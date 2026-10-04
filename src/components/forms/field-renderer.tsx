@@ -40,6 +40,8 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
       return (
         <FieldShell field={field} error={error} labelExtra={labelExtra}>
           <Textarea
+            id={field.id}
+            name={field.name || field.id}
             value={(value as string) ?? ''}
             placeholder={field.placeholder ?? 'Enter your response...'}
             disabled={disabled}
@@ -55,6 +57,8 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
         <FieldShell field={field} error={error} labelExtra={labelExtra}>
           <div className="relative">
             <select
+              id={field.id}
+              name={field.name || field.id}
               value={(value as string) ?? ''}
               disabled={disabled}
               onChange={(e) => onChange(e.target.value)}
@@ -80,13 +84,15 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
 
     case 'radio':
       return (
-        <FieldShell field={field} error={error} labelExtra={labelExtra}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {field.options?.map((opt) => {
+        <FieldShell field={field} error={error} labelExtra={labelExtra} isGroup>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="radiogroup" aria-label={field.label}>
+            {field.options?.map((opt, i) => {
               const isChecked = value === opt;
+              const optId = `${field.id}_opt_${i}`;
               return (
                 <label
                   key={opt}
+                  htmlFor={optId}
                   className={`flex items-center gap-3 rounded-2xl border p-3.5 text-sm cursor-pointer transition-all select-none ${
                     isChecked
                       ? 'border-[#007AFF] bg-[#007AFF]/5 text-[#1D1D1F] shadow-sm ring-1 ring-[#007AFF]'
@@ -94,8 +100,9 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
                   }`}
                 >
                   <input
+                    id={optId}
                     type="radio"
-                    name={field.id}
+                    name={field.name || field.id}
                     value={opt}
                     checked={isChecked}
                     disabled={disabled}
@@ -113,13 +120,15 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
     case 'checkbox': {
       const selected = Array.isArray(value) ? (value as string[]) : [];
       return (
-        <FieldShell field={field} error={error} labelExtra={labelExtra}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {field.options?.map((opt) => {
+        <FieldShell field={field} error={error} labelExtra={labelExtra} isGroup>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" role="group" aria-label={field.label}>
+            {field.options?.map((opt, i) => {
               const isChecked = selected.includes(opt);
+              const optId = `${field.id}_opt_${i}`;
               return (
                 <label
                   key={opt}
+                  htmlFor={optId}
                   className={`flex items-center gap-3 rounded-2xl border p-3.5 text-sm cursor-pointer transition-all select-none ${
                     isChecked
                       ? 'border-[#007AFF] bg-[#007AFF]/5 text-[#1D1D1F] shadow-sm ring-1 ring-[#007AFF]'
@@ -127,7 +136,9 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
                   }`}
                 >
                   <input
+                    id={optId}
                     type="checkbox"
+                    name={`${field.name || field.id}[]`}
                     value={opt}
                     checked={isChecked}
                     disabled={disabled}
@@ -149,7 +160,10 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
     case 'image':
       return (
         <FieldShell field={field} error={error} labelExtra={labelExtra}>
-          <label className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-black/[0.12] bg-[#F5F5F7]/50 p-6 text-center cursor-pointer transition-all hover:border-[#007AFF] hover:bg-[#007AFF]/5">
+          <label
+            htmlFor={field.id}
+            className="group relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-black/[0.12] bg-[#F5F5F7]/50 p-6 text-center cursor-pointer transition-all hover:border-[#007AFF] hover:bg-[#007AFF]/5"
+          >
             <div className="h-10 w-10 rounded-full bg-white shadow-sm flex items-center justify-center text-[#007AFF] mb-2 group-hover:scale-110 transition-transform">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -162,6 +176,8 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
               {field.type === 'image' ? 'Images only' : 'Documents or PDFs'} up to {field.file?.maxSizeMb ?? 10}MB
             </p>
             <input
+              id={field.id}
+              name={field.name || field.id}
               type="file"
               disabled={disabled}
               accept={field.file?.acceptedMimeTypes.join(',')}
@@ -175,7 +191,14 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
     case 'date':
       return (
         <FieldShell field={field} error={error} labelExtra={labelExtra}>
-          <Input type="date" value={(value as string) ?? ''} disabled={disabled} onChange={(e) => onChange(e.target.value)} />
+          <Input
+            id={field.id}
+            name={field.name || field.id}
+            type="date"
+            value={(value as string) ?? ''}
+            disabled={disabled}
+            onChange={(e) => onChange(e.target.value)}
+          />
         </FieldShell>
       );
 
@@ -183,6 +206,8 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
       return (
         <FieldShell field={field} error={error} labelExtra={labelExtra}>
           <Input
+            id={field.id}
+            name={field.name || field.id}
             type="number"
             value={(value as string) ?? ''}
             placeholder={field.placeholder ?? '0'}
@@ -198,6 +223,8 @@ export function FieldRenderer({ field, value, onChange, disabled, error, labelEx
       return (
         <FieldShell field={field} error={error} labelExtra={labelExtra}>
           <Input
+            id={field.id}
+            name={field.name || field.id}
             type={inputType}
             value={(value as string) ?? ''}
             placeholder={field.placeholder ?? `Enter your ${field.label.toLowerCase()}`}
@@ -217,20 +244,29 @@ function FieldShell({
   field,
   error,
   labelExtra,
+  isGroup = false,
   children,
 }: {
   field: FormField;
   error?: string;
   labelExtra?: React.ReactNode;
+  isGroup?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 flex-wrap">
-        <Label htmlFor={field.id} className="text-sm font-semibold text-[#1D1D1F]">
-          {field.label}
-          {field.required && <span className="ml-1 text-[#FF3B30]">*</span>}
-        </Label>
+        {isGroup ? (
+          <span className="mb-1.5 block text-sm font-semibold text-[#1D1D1F]">
+            {field.label}
+            {field.required && <span className="ml-1 text-[#FF3B30]">*</span>}
+          </span>
+        ) : (
+          <Label htmlFor={field.id} className="text-sm font-semibold text-[#1D1D1F]">
+            {field.label}
+            {field.required && <span className="ml-1 text-[#FF3B30]">*</span>}
+          </Label>
+        )}
         {labelExtra}
       </div>
       {children}

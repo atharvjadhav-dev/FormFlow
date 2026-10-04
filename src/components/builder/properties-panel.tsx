@@ -51,6 +51,7 @@ export function PropertiesPanel({
           </label>
           <select
             id="field-width"
+            name="fieldWidth"
             value={field.width ?? 12}
             onChange={(e) => onChange({ width: Number(e.target.value) as FieldWidth })}
             className="h-9 w-full rounded-lg border border-black/[0.1] bg-white px-3 text-sm text-[#1D1D1F] focus:outline-none focus:ring-2 focus:ring-[#007AFF]/20 focus:border-[#007AFF]"
@@ -98,8 +99,10 @@ export function PropertiesPanel({
 
             <div className="flex items-center justify-between pt-1">
               <span className="text-sm font-medium text-[#1D1D1F]">Required</span>
-              <label className="relative inline-flex items-center cursor-pointer">
+              <label htmlFor="field-required-toggle" className="relative inline-flex items-center cursor-pointer">
                 <input
+                  id="field-required-toggle"
+                  name="fieldRequired"
                   type="checkbox"
                   checked={field.required ?? false}
                   onChange={(e) => onChange({ required: e.target.checked })}

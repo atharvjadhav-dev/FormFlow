@@ -47,14 +47,14 @@ export function SubmissionsTable({ rows }: { rows: SubmissionRow[] }) {
     <div className="space-y-3">
       {/* Bulk Action Capsule Bar */}
       {selected.size > 0 && (
-        <div className="flex items-center justify-between rounded-2xl border border-black/[0.08] bg-white p-3 shadow-apple backdrop-blur-md">
+        <div className="flex items-center justify-between gap-2 flex-wrap rounded-2xl border border-black/[0.08] bg-white p-3 shadow-apple backdrop-blur-md">
           <div className="flex items-center gap-2 px-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#007AFF] text-xs font-bold text-white">
               {selected.size}
             </span>
             <span className="text-xs font-semibold text-[#1D1D1F]">Selected</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {STATUSES.map((s) => (
               <button
                 key={s}
@@ -70,12 +70,15 @@ export function SubmissionsTable({ rows }: { rows: SubmissionRow[] }) {
       )}
 
       {/* Modern Table Container */}
-      <div className="overflow-hidden rounded-3xl border border-black/[0.06] bg-white shadow-apple">
-        <table className="w-full text-left text-xs">
+      <div className="overflow-x-auto rounded-3xl border border-black/[0.06] bg-white shadow-apple">
+        <table className="w-full text-left text-xs min-w-[500px]">
           <thead className="bg-[#F5F5F7]/80 text-[11px] font-semibold uppercase tracking-wider text-[#86868B] border-b border-black/[0.06]">
             <tr>
               <th className="w-12 px-5 py-3.5">
                 <input
+                  id="select-all-submissions"
+                  name="selectAllSubmissions"
+                  aria-label="Select all submissions"
                   type="checkbox"
                   checked={selected.size === rows.length && rows.length > 0}
                   onChange={toggleAll}
@@ -97,6 +100,9 @@ export function SubmissionsTable({ rows }: { rows: SubmissionRow[] }) {
               >
                 <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                   <input
+                    id={`select-submission-${row.id}`}
+                    name={`selectSubmission_${row.id}`}
+                    aria-label={`Select submission from ${row.submitterEmail || row.formName}`}
                     type="checkbox"
                     checked={selected.has(row.id)}
                     onChange={() => toggle(row.id)}

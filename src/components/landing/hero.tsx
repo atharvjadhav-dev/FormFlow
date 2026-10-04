@@ -13,10 +13,10 @@ export function Hero({ isAuthenticated }: HeroProps) {
   return (
     <section className="relative px-4 sm:px-6 pt-20 sm:pt-28 pb-14 sm:pb-20 text-center max-w-4xl mx-auto">
       {/* Eyebrow */}
-      <div className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] bg-white px-3.5 py-1.5 text-xs font-medium text-[#18181B] mb-8 shadow-craft">
-        <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+      <div className="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 rounded-2xl sm:rounded-full border border-black/[0.08] bg-white px-3 sm:px-3.5 py-1.5 text-xs font-medium text-[#18181B] mb-8 shadow-craft max-w-full">
+        <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
         <span className="text-[11px] font-semibold uppercase tracking-wider text-[#52525B]">Engineered for Conversion</span>
-        <span className="text-zinc-300">|</span>
+        <span className="hidden sm:inline text-zinc-300">|</span>
         <span className="text-xs text-[#18181B] font-medium">12-Column Responsive Layouts</span>
       </div>
 
@@ -51,13 +51,13 @@ export function Hero({ isAuthenticated }: HeroProps) {
       </div>
 
       {/* Under CTAs feature list */}
-      <div className="mt-8 flex items-center justify-center gap-4 text-xs font-mono text-[#71717A]">
+      <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-4 text-xs font-mono text-[#71717A]">
         <span>12 Templates</span>
-        <span>·</span>
+        <span className="hidden sm:inline">·</span>
         <span>Conditional Logic</span>
-        <span>·</span>
+        <span className="hidden sm:inline">·</span>
         <span>Instant Rollbacks</span>
-        <span>·</span>
+        <span className="hidden sm:inline">·</span>
         <span>Zero Boilerplate</span>
       </div>
     </section>

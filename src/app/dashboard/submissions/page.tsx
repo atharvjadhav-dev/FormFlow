@@ -99,7 +99,9 @@ export default async function SubmissionsPage({
         <div className="relative min-w-[220px] flex-1">
           <Search className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#86868B]" />
           <input
+            id="submissions-filter-email"
             name="q"
+            aria-label="Filter submissions by email address"
             placeholder="Filter by email address..."
             defaultValue={params.q}
             className="h-9 w-full rounded-xl border border-black/[0.08] bg-[#F5F5F7]/80 pl-9 pr-3 text-xs text-[#1D1D1F] placeholder-[#86868B] focus:border-[#007AFF] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#007AFF]/15"
@@ -107,7 +109,9 @@ export default async function SubmissionsPage({
         </div>
 
         <select
+          id="submissions-filter-status"
           name="status"
+          aria-label="Filter by review status"
           defaultValue={params.status ?? ''}
           className="h-9 rounded-xl border border-black/[0.08] bg-[#F5F5F7]/80 px-3 text-xs font-medium text-[#1D1D1F] focus:border-[#007AFF] focus:outline-none"
         >
@@ -119,7 +123,9 @@ export default async function SubmissionsPage({
         </select>
 
         <select
+          id="submissions-filter-form"
           name="formId"
+          aria-label="Filter by form"
           defaultValue={params.formId ?? ''}
           className="h-9 rounded-xl border border-black/[0.08] bg-[#F5F5F7]/80 px-3 text-xs font-medium text-[#1D1D1F] focus:border-[#007AFF] focus:outline-none max-w-[200px] truncate"
         >

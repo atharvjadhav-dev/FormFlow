@@ -61,7 +61,9 @@ export default async function FormsPage() {
 
           <form action={createForm} className="hidden sm:flex items-center gap-2 bg-white p-1 rounded-full border border-black/[0.06] shadow-apple">
             <input
+              id="quick-create-form-name"
               name="name"
+              aria-label="Quick title for blank form"
               placeholder="Quick title..."
               className="w-36 bg-transparent px-3 text-xs text-[#1D1D1F] placeholder:text-[#86868B] focus:outline-none"
             />

@@ -17,7 +17,7 @@ export function NavPills() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex items-center gap-1 bg-black/[0.03] p-1 rounded-full border border-black/[0.04]">
+    <nav className="flex items-center gap-1 bg-black/[0.03] p-1 rounded-full border border-black/[0.04] shrink-0 whitespace-nowrap">
       {NAV.map((item) => {
         const isActive =
           item.href === '/dashboard'
@@ -29,7 +29,7 @@ export function NavPills() {
             key={item.href}
             href={item.href}
             className={cn(
-              'relative rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ease-out select-none',
+              'relative rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ease-out select-none shrink-0',
               isActive
                 ? 'bg-white text-[#1D1D1F] shadow-sm font-semibold'
                 : 'text-[#86868B] hover:text-[#1D1D1F] hover:bg-white/50',

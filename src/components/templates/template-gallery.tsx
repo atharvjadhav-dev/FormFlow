@@ -79,6 +79,9 @@ export function TemplateGallery({ templates }: TemplateGalleryProps) {
         <div className="relative w-full sm:w-72">
           <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#86868B]" />
           <input
+            id="search-templates-input"
+            name="searchTemplates"
+            aria-label="Search templates"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

@@ -64,7 +64,7 @@ export function ShortcutsModal({
       aria-label="Keyboard Shortcuts"
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl border border-black/[0.08] text-sm animate-in zoom-in-95 duration-150"
+        className="w-full max-w-sm max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl border border-black/[0.08] text-sm animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-black/[0.06]">

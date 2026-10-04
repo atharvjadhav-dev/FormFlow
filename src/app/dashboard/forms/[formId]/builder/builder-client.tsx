@@ -90,6 +90,7 @@ export function BuilderClient({
   const [timezone] = useState(initialTimezone);
   const [status, setStatus] = useState<'idle' | 'saved' | 'published' | 'error'>('idle');
   const [canvasViewport, setCanvasViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [activeMobileTab, setActiveMobileTab] = useState<'canvas' | 'palette' | 'properties'>('canvas');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -150,20 +151,24 @@ export function BuilderClient({
     }
     addField(type, atIndex);
     setIsQuickAddOpen(false);
+    setActiveMobileTab('canvas');
     const meta = getFieldMeta(type);
     setToastMessage(`Added ${meta.displayLabel ?? meta.label}`);
   }
 
   function handleOpenProperties() {
-    const labelInput = document.getElementById('field-label') as HTMLInputElement | null;
-    if (labelInput) {
-      labelInput.focus();
-      labelInput.select();
-    } else {
-      const panel = document.querySelector('[data-properties-panel]') as HTMLElement | null;
-      panel?.focus();
-    }
-    document.querySelector('[data-properties-panel]')?.scrollIntoView({ behavior: 'smooth' });
+    setActiveMobileTab('properties');
+    setTimeout(() => {
+      const labelInput = document.getElementById('field-label') as HTMLInputElement | null;
+      if (labelInput) {
+        labelInput.focus();
+        labelInput.select();
+      } else {
+        const panel = document.querySelector('[data-properties-panel]') as HTMLElement | null;
+        panel?.focus();
+      }
+      document.querySelector('[data-properties-panel]')?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
     setToastMessage('Properties inspector active');
   }
 
@@ -216,26 +221,26 @@ export function BuilderClient({
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col bg-[#F5F5F7] text-[#1D1D1F] overflow-hidden">
       {/* Clean Studio Navigation Header */}
-      <header className="sticky top-0 z-30 flex h-13 items-center justify-between border-b border-black/[0.06] bg-white/95 px-5 backdrop-blur-md shrink-0 select-none">
+      <header className="sticky top-0 z-30 flex h-13 items-center justify-between border-b border-black/[0.06] bg-white/95 px-3 sm:px-5 backdrop-blur-md shrink-0 select-none">
         {/* Left: Breadcrumbs */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           <Link
             href="/dashboard/forms"
-            className="flex items-center gap-1 text-sm font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
+            className="flex items-center gap-1 text-xs sm:text-sm font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
-            <span>Forms</span>
+            <span className="hidden xs:inline">Forms</span>
           </Link>
 
           <span className="text-black/[0.15]">/</span>
 
-          <h1 className="text-sm font-semibold text-[#1D1D1F] truncate max-w-[240px]">{formName}</h1>
+          <h1 className="text-xs sm:text-sm font-semibold text-[#1D1D1F] truncate max-w-[100px] sm:max-w-[200px] md:max-w-[260px]">{formName}</h1>
         </div>
 
         {/* Right: Actions & Tools */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3">
           {/* Undo / Redo & Shortcuts Help */}
-          <div className="flex items-center gap-1 pr-2 border-r border-black/[0.06]">
+          <div className="hidden sm:flex items-center gap-1 pr-2 border-r border-black/[0.06]">
             <button
               type="button"
               disabled={!canUndo}
@@ -325,17 +330,17 @@ export function BuilderClient({
           </div>
 
           {status === 'published' && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 sm:px-2.5 py-1 rounded-md border border-emerald-100">
               <Check className="h-3.5 w-3.5" /> Published
             </span>
           )}
           {status === 'saved' && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 sm:px-2.5 py-1 rounded-md border border-emerald-100">
               <Check className="h-3.5 w-3.5" /> Saved
             </span>
           )}
           {status === 'error' && (
-            <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-100">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 bg-rose-50 px-2 sm:px-2.5 py-1 rounded-md border border-rose-100">
               <AlertCircle className="h-3.5 w-3.5" /> Failed
             </span>
           )}
@@ -344,7 +349,7 @@ export function BuilderClient({
             type="button"
             disabled={isPending}
             onClick={handleSaveDraft}
-            className="h-8 rounded-lg border border-black/[0.1] bg-white px-3.5 text-sm font-medium text-[#1D1D1F] hover:bg-black/[0.03] active:bg-black/[0.06] transition-colors disabled:opacity-50"
+            className="h-8 rounded-lg border border-black/[0.1] bg-white px-2.5 sm:px-3.5 text-xs sm:text-sm font-medium text-[#1D1D1F] hover:bg-black/[0.03] active:bg-black/[0.06] transition-colors disabled:opacity-50"
           >
             Save Draft
           </button>
@@ -354,12 +359,12 @@ export function BuilderClient({
             type="button"
             disabled={isPending}
             onClick={handlePublish}
-            className="flex h-8 items-center gap-1.5 rounded-lg bg-[#18181B] px-4 text-sm font-medium text-white hover:bg-black active:bg-zinc-900 shadow-sm transition-all disabled:opacity-50 btn-press"
+            className="flex h-8 items-center gap-1.5 rounded-lg bg-[#18181B] px-3 sm:px-4 text-xs sm:text-sm font-medium text-white hover:bg-black active:bg-zinc-900 shadow-sm transition-all disabled:opacity-50 btn-press"
           >
             {isPending ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Publishing...</span>
+                <span className="hidden xs:inline">Publishing...</span>
               </>
             ) : (
               <>
@@ -371,16 +376,66 @@ export function BuilderClient({
         </div>
       </header>
 
+      {/* Mobile Tab Switcher */}
+      <div className="lg:hidden flex items-center justify-around border-b border-black/[0.06] bg-white px-2 py-1.5 shrink-0 text-xs font-medium gap-1.5">
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('palette')}
+          className={`flex-1 py-1.5 px-2 text-center rounded-lg transition-colors ${
+            activeMobileTab === 'palette'
+              ? 'bg-[#18181B] text-white font-semibold shadow-xs'
+              : 'text-[#86868B] hover:text-[#1D1D1F]'
+          }`}
+        >
+          + Add Fields
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('canvas')}
+          className={`flex-1 py-1.5 px-2 text-center rounded-lg transition-colors ${
+            activeMobileTab === 'canvas'
+              ? 'bg-[#18181B] text-white font-semibold shadow-xs'
+              : 'text-[#86868B] hover:text-[#1D1D1F]'
+          }`}
+        >
+          Canvas ({fields.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('properties')}
+          className={`flex-1 py-1.5 px-2 text-center rounded-lg transition-colors ${
+            activeMobileTab === 'properties'
+              ? 'bg-[#18181B] text-white font-semibold shadow-xs'
+              : 'text-[#86868B] hover:text-[#1D1D1F]'
+          }`}
+        >
+          Properties {selectedField ? '•' : ''}
+        </button>
+      </div>
+
       {/* Studio 3-Pane Body */}
       <DndContext id="form-builder-dnd" sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="grid flex-1 grid-cols-[240px_1fr_300px] overflow-hidden min-h-0">
+        <div className="flex flex-col lg:grid flex-1 lg:grid-cols-[240px_1fr_300px] overflow-hidden min-h-0">
           {/* Left Palette */}
-          <aside className="overflow-y-auto border-r border-black/[0.06] bg-white/70 backdrop-blur-sm">
-            <FieldPalette onAdd={(type) => addField(type)} />
+          <aside
+            className={`overflow-y-auto border-r border-black/[0.06] bg-white/70 backdrop-blur-sm ${
+              activeMobileTab === 'palette' ? 'flex-1' : 'hidden lg:block'
+            }`}
+          >
+            <FieldPalette
+              onAdd={(type) => {
+                addField(type);
+                setActiveMobileTab('canvas');
+              }}
+            />
           </aside>
 
           {/* Center Canvas with End Section */}
-          <main className="overflow-y-auto bg-[#F4F4F5]/50 bg-dot-pattern py-8 px-6">
+          <main
+            className={`overflow-y-auto bg-[#F4F4F5]/50 bg-dot-pattern py-4 sm:py-8 px-3 sm:px-6 ${
+              activeMobileTab === 'canvas' ? 'flex-1' : 'hidden lg:block'
+            }`}
+          >
             <div
               className={`mx-auto transition-all duration-200 space-y-6 ${
                 canvasViewport === 'desktop'
@@ -475,7 +530,9 @@ export function BuilderClient({
           {/* Right Inspector */}
           <aside
             data-properties-panel
-            className="overflow-y-auto border-l border-black/[0.06] bg-white/70 backdrop-blur-sm"
+            className={`overflow-y-auto border-l border-black/[0.06] bg-white/70 backdrop-blur-sm ${
+              activeMobileTab === 'properties' ? 'flex-1' : 'hidden lg:block'
+            }`}
           >
             <PropertiesPanel
               field={selectedField}

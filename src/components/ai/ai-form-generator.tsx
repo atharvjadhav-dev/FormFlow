@@ -206,6 +206,7 @@ export function AiFormGenerator({ onBackToOverview }: AiFormGeneratorProps) {
             <div className="relative rounded-2xl border border-black/[0.1] bg-[#FAFAFA] focus-within:border-[#18181B] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#18181B]/10 transition-all shadow-craft-sm">
               <textarea
                 id="ai-form-prompt"
+                name="aiFormPrompt"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -263,8 +264,10 @@ export function AiFormGenerator({ onBackToOverview }: AiFormGeneratorProps) {
             {showAdvanced && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-black/[0.06] animate-in fade-in duration-150">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-[#18181B]">Field density</label>
+                  <label htmlFor="ai-field-density" className="text-xs font-medium text-[#18181B]">Field density</label>
                   <select
+                    id="ai-field-density"
+                    name="fieldDensity"
                     value={fieldCount}
                     onChange={(e) => setFieldCount(e.target.value as any)}
                     className="h-8 w-full rounded-lg border border-black/[0.1] bg-white px-2.5 text-xs text-[#18181B] focus:outline-none"
@@ -277,8 +280,10 @@ export function AiFormGenerator({ onBackToOverview }: AiFormGeneratorProps) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-[#18181B]">Section layout</label>
+                  <label htmlFor="ai-section-layout" className="text-xs font-medium text-[#18181B]">Section layout</label>
                   <select
+                    id="ai-section-layout"
+                    name="sectionLayout"
                     value={style}
                     onChange={(e) => setStyle(e.target.value as any)}
                     className="h-8 w-full rounded-lg border border-black/[0.1] bg-white px-2.5 text-xs text-[#18181B] focus:outline-none"
@@ -290,8 +295,10 @@ export function AiFormGenerator({ onBackToOverview }: AiFormGeneratorProps) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-[#18181B]">Validation enforcement</label>
+                  <label htmlFor="ai-validation-enforcement" className="text-xs font-medium text-[#18181B]">Validation enforcement</label>
                   <select
+                    id="ai-validation-enforcement"
+                    name="validationEnforcement"
                     value={requiredPref}
                     onChange={(e) => setRequiredPref(e.target.value as any)}
                     className="h-8 w-full rounded-lg border border-black/[0.1] bg-white px-2.5 text-xs text-[#18181B] focus:outline-none"

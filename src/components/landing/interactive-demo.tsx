@@ -666,12 +666,14 @@ export function InteractiveDemo() {
                 {/* Width Control */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <label className="font-medium text-[#18181B]">12-Col Span</label>
+                    <label htmlFor="demo-field-width-select" className="font-medium text-[#18181B]">12-Col Span</label>
                     <span className="font-mono text-[11px] text-[#007AFF] font-semibold">
                       {getFieldWidthFraction(selectedField.width)}
                     </span>
                   </div>
                   <select
+                    id="demo-field-width-select"
+                    name="demoFieldWidth"
                     value={selectedField.width ?? 12}
                     onChange={(e) => updateSelectedField({ width: Number(e.target.value) as FieldWidth })}
                     className="h-8 w-full rounded-lg border border-black/[0.1] bg-white px-2.5 text-xs text-[#18181B] focus:outline-none focus:border-[#007AFF]"
@@ -685,8 +687,10 @@ export function InteractiveDemo() {
 
                 {/* Label Input */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-[#18181B]">Field Label</label>
+                  <label htmlFor="demo-field-label-input" className="text-xs font-medium text-[#18181B]">Field Label</label>
                   <input
+                    id="demo-field-label-input"
+                    name="demoFieldLabel"
                     type="text"
                     value={selectedField.label}
                     onChange={(e) => updateSelectedField({ label: e.target.value })}
@@ -697,8 +701,10 @@ export function InteractiveDemo() {
                 {/* Placeholder (if applicable) */}
                 {selectedField.type !== 'heading' && selectedField.type !== 'radio' && selectedField.type !== 'checkbox' && (
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-[#18181B]">Placeholder Hint</label>
+                    <label htmlFor="demo-field-placeholder-input" className="text-xs font-medium text-[#18181B]">Placeholder Hint</label>
                     <input
+                      id="demo-field-placeholder-input"
+                      name="demoFieldPlaceholder"
                       type="text"
                       value={selectedField.placeholder || ''}
                       onChange={(e) => updateSelectedField({ placeholder: e.target.value })}
@@ -709,8 +715,12 @@ export function InteractiveDemo() {
 
                 {/* Required Toggle */}
                 <div className="flex items-center justify-between pt-1">
-                  <span className="text-xs font-medium text-[#18181B]">Required validation</span>
+                  <label htmlFor="demo-field-required-checkbox" className="text-xs font-medium text-[#18181B] cursor-pointer">
+                    Required validation
+                  </label>
                   <input
+                    id="demo-field-required-checkbox"
+                    name="demoFieldRequired"
                     type="checkbox"
                     checked={Boolean(selectedField.required)}
                     onChange={(e) => updateSelectedField({ required: e.target.checked })}

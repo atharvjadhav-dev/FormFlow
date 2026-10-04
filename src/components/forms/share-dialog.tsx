@@ -143,7 +143,7 @@ export function ShareDialog({
             aria-labelledby="share-dialog-title"
           >
             <div
-              className="relative w-full max-w-md rounded-2xl border border-black/[0.08] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 text-[#1D1D1F]"
+              className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-black/[0.08] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 text-[#1D1D1F]"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -173,6 +173,9 @@ export function ShareDialog({
               {/* Link Box */}
               <div className="mb-4 flex items-center gap-2 rounded-xl border border-black/[0.08] bg-[#F5F5F7] p-2">
                 <input
+                  id="share-link-input"
+                  name="shareLink"
+                  aria-label="Shareable form link"
                   type="text"
                   readOnly
                   value={fullUrl}

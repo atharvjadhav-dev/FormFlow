@@ -32,7 +32,7 @@ export function GridSystemSection() {
               <span className="text-xs font-semibold uppercase tracking-wider text-[#71717A] mb-2 block font-mono">
                 Select Layout Preset
               </span>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => setSplitRatio('equal')}
