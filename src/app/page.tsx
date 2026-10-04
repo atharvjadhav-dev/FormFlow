@@ -1,6 +1,6 @@
 import React from 'react';
 import { auth } from '@clerk/nextjs/server';
-import { getAllTemplates } from '@/lib/templates';
+import { getTemplateSummaries } from '@/lib/templates';
 import { Navbar } from '@/components/landing/navbar';
 import { Hero } from '@/components/landing/hero';
 import { InteractiveDemo } from '@/components/landing/interactive-demo';
@@ -19,7 +19,7 @@ export const metadata = {
 
 export default async function HomePage() {
   const { userId } = await auth();
-  const templates = getAllTemplates();
+  const templates = getTemplateSummaries();
 
   return (
     <div className="min-h-screen bg-white text-[#1D1D1F] selection:bg-[#007AFF]/20 selection:text-[#007AFF]">

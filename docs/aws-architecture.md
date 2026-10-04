@@ -156,7 +156,7 @@ Zero-trust, least-privilege network security boundaries between tiers:
 ## 5. Storage and Messaging Architecture
 
 ### 5.1 Amazon S3 (Submissions & Attachments)
-- **Bucket**: `formflow-submissions-081897152686`
+- **Bucket**: `formflow-submissions-production-081897152686`
 - **S3 Block Public Access**: All 4 settings `ENABLED` (No public access under any circumstances).
 - **Server-Side Encryption**: `SSE-S3` (AES-256) enabled by default at zero additional cost.
 - **Direct-to-S3 Upload Flow**:

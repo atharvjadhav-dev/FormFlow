@@ -2,11 +2,11 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import type { FormTemplate, TemplateCategory } from '@/lib/templates';
+import type { TemplateSummary, TemplateCategory } from '@/lib/templates';
 import { ArrowRight, Layers, Sparkles } from 'lucide-react';
 
 interface TemplatesShowcaseProps {
-  templates: FormTemplate[];
+  templates: TemplateSummary[];
   isAuthenticated: boolean;
 }
 
@@ -86,7 +86,7 @@ export function TemplatesShowcase({ templates, isAuthenticated }: TemplatesShowc
                     {template.category}
                   </span>
                   <span className="text-[10px] font-semibold text-[#007AFF] bg-[#007AFF]/10 px-2 py-0.5 rounded-full">
-                    {template.fields.length} fields
+                    {template.fieldCount} fields
                   </span>
                 </div>
               </div>

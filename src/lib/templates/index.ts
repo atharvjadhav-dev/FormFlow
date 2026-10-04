@@ -5,8 +5,28 @@ import type { FormTemplate } from './types';
 export * from './types';
 export * from './definitions';
 
+export interface TemplateSummary {
+  id: string;
+  name: string;
+  description: string;
+  category: import('./types').TemplateCategory;
+  icon: string;
+  fieldCount: number;
+}
+
 export function getAllTemplates(): FormTemplate[] {
   return FORM_TEMPLATES;
+}
+
+export function getTemplateSummaries(): TemplateSummary[] {
+  return FORM_TEMPLATES.map((t) => ({
+    id: t.id,
+    name: t.name,
+    description: t.description,
+    category: t.category,
+    icon: t.icon,
+    fieldCount: t.fields.length,
+  }));
 }
 
 export function getTemplateById(id: string): FormTemplate | undefined {

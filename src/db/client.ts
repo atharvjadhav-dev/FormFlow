@@ -23,8 +23,13 @@ const appPool = new Pool({
 const servicePool = new Pool({ connectionString: process.env.SERVICE_DATABASE_URL });
 export const dbService = drizzle(servicePool, { schema });
 
+const orgUuidCache = new Map<string, string>();
+
 export async function resolveOrgUuid(orgId: string): Promise<string> {
   if (UUID_REGEX.test(orgId)) return orgId;
+
+  const cached = orgUuidCache.get(orgId);
+  if (cached) return cached;
 
   const [existing] = await dbService
     .select({ id: schema.organizations.id })
@@ -32,7 +37,10 @@ export async function resolveOrgUuid(orgId: string): Promise<string> {
     .where(eq(schema.organizations.clerkOrgId, orgId))
     .limit(1);
 
-  if (existing) return existing.id;
+  if (existing) {
+    orgUuidCache.set(orgId, existing.id);
+    return existing.id;
+  }
 
   const [created] = await dbService
     .insert(schema.organizations)
@@ -47,6 +55,7 @@ export async function resolveOrgUuid(orgId: string): Promise<string> {
     })
     .returning({ id: schema.organizations.id });
 
+  orgUuidCache.set(orgId, created.id);
   return created.id;
 }
 
