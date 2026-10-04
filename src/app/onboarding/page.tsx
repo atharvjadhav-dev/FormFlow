@@ -1,22 +1,28 @@
-import { OrganizationList } from '@clerk/nextjs';
+import { auth, clerkClient } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
+import { OnboardingClient } from './onboarding-client';
 
-export default function OnboardingPage() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-4">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold text-foreground">Set up your workspace</h1>
-        <p className="mt-1 text-muted-foreground">
-          Create a workspace for your organization, or join one you&apos;ve been invited to.
-        </p>
-      </div>
-      <OrganizationList
-        afterCreateOrganizationUrl="/dashboard"
-        afterSelectOrganizationUrl="/dashboard"
-        hidePersonal
-        appearance={{
-          variables: { colorPrimary: '#1b3a4b', borderRadius: '0.5rem' },
-        }}
-      />
-    </div>
-  );
+export const metadata = {
+  title: 'Set up your workspace — FormFlow',
+};
+
+export default async function OnboardingPage() {
+  const { userId, orgId } = await auth({ treatPendingAsSignedOut: false });
+  if (!userId) redirect('/sign-in');
+
+  // Already has an active organization → never show the setup screen again.
+  if (orgId) redirect('/dashboard');
+
+  // Signed in with no *active* org: if they already belong to one (e.g. after a
+  // refresh or a new device), activate it instead of showing the org picker.
+  let existingOrgId: string | null = null;
+  try {
+    const client = await clerkClient();
+    const { data } = await client.users.getOrganizationMembershipList({ userId, limit: 1 });
+    existingOrgId = data[0]?.organization.id ?? null;
+  } catch {
+    // Fall through to the create screen; the client will still try to recover.
+  }
+
+  return <OnboardingClient existingOrgId={existingOrgId} />;
 }

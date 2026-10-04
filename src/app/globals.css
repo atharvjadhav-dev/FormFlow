@@ -183,4 +183,20 @@ body {
   scrollbar-width: none;
 }
 
+/* iOS Safari zooms the whole page when focusing an input under 16px, which
+   breaks the layout on phones. Keep form controls at 16px on small screens. */
+@media (max-width: 639px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Long user content (emails, URLs, slugs) must wrap instead of overflowing. */
+.break-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 

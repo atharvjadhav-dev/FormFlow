@@ -5,6 +5,7 @@ import { forms, submissions } from '@/db/schema';
 import { requireOrgAuth } from '@/lib/auth';
 import { CopyLinkButton, ShareDialog } from '@/components/forms/share-dialog';
 import { StatusPill } from '@/components/dashboard/submissions-table';
+import { FileText, CheckCircle2, Clock, Plus, Inbox, ChevronRight, Sparkles } from 'lucide-react';
 
 export default async function OverviewPage() {
   const { orgId } = await requireOrgAuth();
@@ -31,210 +32,177 @@ export default async function OverviewPage() {
     return { formCount, submissionCount, pendingCount, recent, latestForm };
   });
 
+  const stats = [
+    { label: 'Forms', value: formCount, hint: 'Ready to accept responses', icon: FileText, tint: 'text-[#007AFF] bg-[#007AFF]/10', href: '/dashboard/forms' },
+    { label: 'Responses', value: submissionCount, hint: 'Across all published forms', icon: CheckCircle2, tint: 'text-[#34C759] bg-[#34C759]/10', href: '/dashboard/submissions' },
+    { label: 'Pending', value: pendingCount, hint: 'Awaiting review', icon: Clock, tint: 'text-[#FF9500] bg-[#FF9500]/10', href: '/dashboard/submissions?status=pending' },
+  ];
+
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
-      {/* Header with live status badge */}
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#1D1D1F]">Workspace Overview</h1>
-          <p className="mt-1 text-sm text-[#86868B]">
-            Real-time analytics and application performance
-          </p>
+    <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-5 sm:py-10 space-y-6 sm:space-y-8">
+      {/* Header */}
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1D1D1F]">Overview</h1>
+          <p className="mt-0.5 text-xs sm:text-sm text-[#86868B]">Your workspace at a glance</p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto bg-white/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-black/[0.06] shadow-sm">
-          <span className="h-2 w-2 rounded-full bg-[#34C759] animate-pulse" />
-          <span className="text-xs font-semibold text-[#1D1D1F]">
-            {formCount > 0 ? `${formCount} Form${formCount > 1 ? 's' : ''} Online` : 'System Ready'}
-          </span>
-          <span className="text-xs text-[#86868B]">· Local Storage Active</span>
-        </div>
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-black/[0.06] bg-white px-3 py-1 text-[11px] sm:text-xs font-semibold text-[#1D1D1F] shadow-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#34C759]" />
+          {formCount > 0 ? `${formCount} live` : 'Ready'}
+        </span>
       </div>
 
-      {/* Metrics Row */}
-      <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="rounded-3xl bg-white p-6 shadow-apple shadow-apple-hover border border-black/[0.04] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Total Forms</span>
-            <div className="h-8 w-8 rounded-full bg-[#007AFF]/10 flex items-center justify-center text-[#007AFF]">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-3xl font-bold tracking-tight text-[#1D1D1F]">{formCount}</p>
-            <p className="mt-1 text-xs text-[#86868B] flex items-center gap-1.5">
-              <span className="text-[#34C759] font-medium">Ready</span> to accept applicant responses
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-3xl bg-white p-6 shadow-apple shadow-apple-hover border border-black/[0.04] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Total Submissions</span>
-            <div className="h-8 w-8 rounded-full bg-[#34C759]/10 flex items-center justify-center text-[#34C759]">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-3xl font-bold tracking-tight text-[#1D1D1F]">{submissionCount}</p>
-            <p className="mt-1 text-xs text-[#86868B]">
-              Across all published forms
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-3xl bg-white p-6 shadow-apple shadow-apple-hover border border-black/[0.04] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Pending Review</span>
-            <div className="h-8 w-8 rounded-full bg-[#FF9500]/10 flex items-center justify-center text-[#FF9500]">
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-3xl font-bold tracking-tight text-[#1D1D1F]">{pendingCount}</p>
-            <p className="mt-1 text-xs text-[#86868B]">
-              Awaiting review from admins
-            </p>
-          </div>
-        </div>
+      {/* Stats — compact 3-up on phones, full cards on larger screens */}
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-5">
+        {stats.map((s) => {
+          const Icon = s.icon;
+          return (
+            <Link
+              key={s.label}
+              href={s.href}
+              className="min-w-0 rounded-2xl sm:rounded-3xl border border-black/[0.04] bg-white p-3 sm:p-6 shadow-apple shadow-apple-hover"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-[#86868B]">
+                  {s.label}
+                </span>
+                <span className={`hidden sm:flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${s.tint}`}>
+                  <Icon className="h-4 w-4" />
+                </span>
+              </div>
+              <p className="mt-1.5 sm:mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-[#1D1D1F] tabular-nums">
+                {s.value}
+              </p>
+              <p className="hidden sm:block mt-1 text-xs text-[#86868B]">{s.hint}</p>
+            </Link>
+          );
+        })}
       </div>
 
-      {/* Quick Actions Strip */}
-      <div className="mb-8">
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#86868B]">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Quick actions */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Quick actions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-4">
           <Link
             href="/dashboard/forms/new"
-            className="group rounded-2xl bg-white p-4 border border-black/[0.05] shadow-apple shadow-apple-hover flex items-center gap-3.5"
+            className="group flex items-center gap-3.5 rounded-2xl border border-black/[0.05] bg-white p-4 shadow-apple shadow-apple-hover"
           >
-            <div className="h-10 w-10 rounded-full bg-[#007AFF] text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform shrink-0">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[#1D1D1F] group-hover:text-[#007AFF] transition-colors">Create Form</p>
-              <p className="text-xs text-[#86868B]">Design fields and publish</p>
-            </div>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#007AFF] text-white shadow-sm transition-transform group-hover:scale-105">
+              <Plus className="h-5 w-5 stroke-[2.5]" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-[#1D1D1F] group-hover:text-[#007AFF] transition-colors">Create form</span>
+              <span className="block truncate text-xs text-[#86868B]">Blank, AI, or template</span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-[#C7C7CC] sm:hidden" />
           </Link>
 
           {latestForm ? (
-            <div className="rounded-2xl bg-white p-4 border border-black/[0.05] shadow-apple shadow-apple-hover flex items-center justify-between">
-              <div className="min-w-0 pr-2">
-                <p className="text-sm font-semibold text-[#1D1D1F] truncate">{latestForm.name}</p>
-                <p className="text-xs text-[#86868B] font-mono truncate">/f/{latestForm.slug}</p>
+            <div className="flex flex-col gap-3 rounded-2xl border border-black/[0.05] bg-white p-4 shadow-apple">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">Latest published</p>
+                <p className="mt-0.5 truncate text-sm font-semibold text-[#1D1D1F]">{latestForm.name}</p>
+                <p className="truncate font-mono text-xs text-[#86868B]">/f/{latestForm.slug}</p>
               </div>
-              <div className="flex items-center gap-1.5 shrink-0">
+              <div className="flex items-center gap-2">
                 <CopyLinkButton slug={latestForm.slug} />
                 <ShareDialog formTitle={latestForm.name} slug={latestForm.slug} />
               </div>
             </div>
           ) : (
             <Link
-              href="/dashboard/forms"
-              className="group rounded-2xl bg-white p-4 border border-black/[0.05] shadow-apple shadow-apple-hover flex items-center gap-3.5"
+              href="/dashboard/forms/new?mode=ai"
+              className="group flex items-center gap-3.5 rounded-2xl border border-black/[0.05] bg-white p-4 shadow-apple shadow-apple-hover"
             >
-              <div className="h-10 w-10 rounded-full bg-[#34C759] text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform shrink-0">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-[#1D1D1F] group-hover:text-[#34C759] transition-colors">Instant Share</p>
-                <p className="text-xs text-[#86868B]">Publish a form to share</p>
-              </div>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#007AFF]/10 text-[#007AFF] transition-transform group-hover:scale-105">
+                <Sparkles className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-[#1D1D1F] group-hover:text-[#007AFF] transition-colors">Create with AI</span>
+                <span className="block truncate text-xs text-[#86868B]">Describe it, we build it</span>
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-[#C7C7CC] sm:hidden" />
             </Link>
           )}
 
           <Link
             href="/dashboard/submissions"
-            className="group rounded-2xl bg-white p-4 border border-black/[0.05] shadow-apple shadow-apple-hover flex items-center gap-3.5"
+            className="group flex items-center gap-3.5 rounded-2xl border border-black/[0.05] bg-white p-4 shadow-apple shadow-apple-hover"
           >
-            <div className="h-10 w-10 rounded-full bg-[#1D1D1F] text-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform shrink-0">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[#1D1D1F] group-hover:text-[#007AFF] transition-colors">Submissions Hub</p>
-              <p className="text-xs text-[#86868B]">Review applicant files</p>
-            </div>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1D1D1F] text-white shadow-sm transition-transform group-hover:scale-105">
+              <Inbox className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold text-[#1D1D1F] group-hover:text-[#007AFF] transition-colors">Submissions</span>
+              <span className="block truncate text-xs text-[#86868B]">Review responses &amp; files</span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-[#C7C7CC] sm:hidden" />
           </Link>
         </div>
-      </div>
+      </section>
 
-      {/* Recent Activity / Submissions */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Recent Activity</h2>
+      {/* Recent activity */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">Recent activity</h2>
           {recent.length > 0 && (
-            <Link href="/dashboard/submissions" className="text-xs font-medium text-[#007AFF] hover:underline">
-              View all &rarr;
+            <Link href="/dashboard/submissions" className="shrink-0 text-xs font-medium text-[#007AFF] hover:underline">
+              View all
             </Link>
           )}
         </div>
 
         {recent.length === 0 ? (
-          <div className="rounded-3xl border border-black/[0.06] bg-white p-10 text-center shadow-apple">
-            <div className="mx-auto h-12 w-12 rounded-full bg-black/[0.04] flex items-center justify-center text-[#86868B] mb-3">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+          <div className="rounded-2xl sm:rounded-3xl border border-black/[0.06] bg-white px-5 py-10 text-center shadow-apple">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-black/[0.04] text-[#86868B]">
+              <Inbox className="h-6 w-6" />
             </div>
-            <p className="font-semibold text-[#1D1D1F] text-base">No submissions yet</p>
-            <p className="mt-1 text-sm text-[#86868B] max-w-sm mx-auto">
-              Once visitors fill out your public form link, their submitted answers and uploaded documents will appear here instantly.
+            <p className="text-base font-semibold text-[#1D1D1F]">No submissions yet</p>
+            <p className="mx-auto mt-1 max-w-sm text-sm text-[#86868B]">
+              When people fill out your published forms, their answers will show up here.
             </p>
-            <div className="mt-5">
-              <Link
-                href="/dashboard/forms"
-                className="inline-flex items-center gap-2 rounded-full bg-[#007AFF] text-white px-5 py-2.5 text-xs font-semibold shadow-sm hover:bg-[#0071E3] active:scale-[0.97] transition-all"
-              >
-                Go to Forms &rarr;
-              </Link>
-            </div>
+            <Link
+              href="/dashboard/forms"
+              className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[#007AFF] px-5 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#0071E3] active:scale-[0.97]"
+            >
+              Go to forms
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         ) : (
-          <div className="rounded-3xl border border-black/[0.05] bg-white shadow-apple overflow-hidden divide-y divide-black/[0.04]">
+          <ul className="divide-y divide-black/[0.04] overflow-hidden rounded-2xl sm:rounded-3xl border border-black/[0.05] bg-white shadow-apple">
             {recent.map((s) => (
-              <Link
-                key={s.id}
-                href={`/dashboard/submissions/${s.id}`}
-                className="flex items-center justify-between px-6 py-4 hover:bg-[#F5F5F7]/60 transition-colors group"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="h-8 w-8 rounded-full bg-[#007AFF]/10 flex items-center justify-center text-[#007AFF] font-medium text-xs">
-                    {(s.submitterEmail ?? 'S')[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-[#1D1D1F] group-hover:text-[#007AFF] transition-colors">
-                      {s.submitterEmail ?? 'Applicant Submission'}
-                    </p>
-                    <p className="text-xs text-[#86868B]">
-                      {new Date(s.submittedAt).toLocaleDateString(undefined, {
+              <li key={s.id}>
+                <Link
+                  href={`/dashboard/submissions/${s.id}`}
+                  className="group flex items-center gap-3 px-4 sm:px-6 py-3.5 transition-colors hover:bg-[#F5F5F7]/60 active:bg-[#F5F5F7]"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#007AFF]/10 text-xs font-medium text-[#007AFF]">
+                    {(s.submitterEmail ?? 'A')[0].toUpperCase()}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-[#1D1D1F] group-hover:text-[#007AFF] transition-colors">
+                      {s.submitterEmail ?? 'Anonymous'}
+                    </span>
+                    <span className="block text-xs text-[#86868B]">
+                      {new Date(s.submittedAt).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
-                        hour: '2-digit',
+                        hour: 'numeric',
                         minute: '2-digit',
                       })}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <StatusPill status={s.status} />
-                  <span className="text-[#86868B] group-hover:translate-x-0.5 transition-transform text-sm">&rarr;</span>
-                </div>
-              </Link>
+                    </span>
+                  </span>
+                  <span className="shrink-0">
+                    <StatusPill status={s.status} />
+                  </span>
+                  <ChevronRight className="hidden sm:block h-4 w-4 shrink-0 text-[#C7C7CC] transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 }

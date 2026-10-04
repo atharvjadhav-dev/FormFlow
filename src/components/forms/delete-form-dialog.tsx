@@ -75,10 +75,10 @@ export function DeleteFormDialog({
         }}
         title="Delete form"
         aria-label={`Delete ${formName}`}
-        className="rounded-full bg-black/[0.03] hover:bg-red-50 hover:text-red-600 text-[#86868B] px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1.5 border border-transparent hover:border-red-200"
+        className="h-8 shrink-0 rounded-full bg-black/[0.03] hover:bg-red-50 hover:text-red-600 text-[#86868B] px-2.5 sm:px-3 text-xs font-medium transition-colors flex items-center justify-center gap-1.5 border border-transparent hover:border-red-200"
       >
         <Trash2 className="h-3.5 w-3.5 text-current" />
-        <span>Delete</span>
+        <span className="hidden sm:inline">Delete</span>
       </button>
 
       {isOpen &&

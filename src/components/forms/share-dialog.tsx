@@ -10,6 +10,8 @@ interface ShareDialogProps {
   slug: string;
   buttonVariant?: 'default' | 'outline' | 'ghost';
   buttonSize?: 'sm' | 'md' | 'icon';
+  /** Icon-only trigger on phones (label shown from `sm` up). */
+  compact?: boolean;
 }
 
 const emptySubscribe = () => () => {};
@@ -19,6 +21,7 @@ export function ShareDialog({
   slug,
   buttonVariant = 'outline',
   buttonSize = 'sm',
+  compact = false,
 }: ShareDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -123,10 +126,11 @@ export function ShareDialog({
           e.stopPropagation();
           setIsOpen(true);
         }}
-        className="gap-1.5"
+        aria-label="Share form"
+        className={compact ? 'gap-1.5 px-2.5 sm:px-3.5' : 'gap-1.5'}
       >
         <Share2 className="h-3.5 w-3.5" />
-        <span>Share</span>
+        <span className={compact ? 'hidden sm:inline' : undefined}>Share</span>
       </Button>
 
       {isOpen &&
@@ -143,7 +147,7 @@ export function ShareDialog({
             aria-labelledby="share-dialog-title"
           >
             <div
-              className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-black/[0.08] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 text-[#1D1D1F]"
+              className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl border border-black/[0.08] bg-white p-5 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 text-[#1D1D1F]"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -180,7 +184,7 @@ export function ShareDialog({
                   readOnly
                   value={fullUrl}
                   onFocus={(e) => e.target.select()}
-                  className="w-full bg-transparent px-2 text-xs font-mono text-[#1D1D1F] focus:outline-none select-all cursor-text"
+                  className="min-w-0 w-full bg-transparent px-2 text-xs font-mono text-[#1D1D1F] focus:outline-none select-all cursor-text"
                 />
                 <Button
                   type="button"
@@ -272,7 +276,7 @@ export function ShareDialog({
   );
 }
 
-export function CopyLinkButton({ slug }: { slug: string }) {
+export function CopyLinkButton({ slug, compact = false }: { slug: string; compact?: boolean }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e: React.MouseEvent) => {
@@ -302,17 +306,18 @@ export function CopyLinkButton({ slug }: { slug: string }) {
       variant="outline"
       size="sm"
       onClick={handleCopy}
-      className="gap-1.5 text-xs h-8 px-2.5"
+      aria-label="Copy form link"
+      className="gap-1.5 text-xs h-8 px-2.5 shrink-0"
     >
       {copied ? (
         <>
           <Check className="h-3 w-3 text-emerald-500" />
-          <span className="text-emerald-500 font-medium">Copied!</span>
+          <span className={compact ? 'hidden sm:inline text-emerald-500 font-medium' : 'text-emerald-500 font-medium'}>Copied!</span>
         </>
       ) : (
         <>
           <Copy className="h-3 w-3" />
-          <span>Copy link</span>
+          <span className={compact ? 'hidden sm:inline' : undefined}>Copy link</span>
         </>
       )}
     </Button>

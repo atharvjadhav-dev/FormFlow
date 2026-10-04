@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
@@ -13,6 +13,13 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'FormFlow — Form Builder',
   description: 'Clean, minimal, and secure form builder for modern teams.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#F5F5F7',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

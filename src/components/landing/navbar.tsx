@@ -62,14 +62,23 @@ export function Navbar({ isAuthenticated }: NavbarProps) {
           </Link>
         </div>
 
-        {/* Mobile menu trigger */}
+        {/* Small 3 lines button for mobile nav bar */}
         <button
           type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-1.5 rounded-lg text-[#86868B] hover:text-[#1D1D1F] hover:bg-black/[0.04] transition-colors"
+          className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg border border-black/[0.08] bg-white text-[#1D1D1F] hover:bg-black/[0.04] shadow-2xs transition-colors"
           aria-label="Toggle navigation menu"
+          aria-expanded={mobileMenuOpen}
         >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {mobileMenuOpen ? (
+            <X className="h-4 w-4" />
+          ) : (
+            <div className="flex flex-col justify-center items-center gap-[3px]">
+              <span className="h-[1.5px] w-3.5 rounded-full bg-[#1D1D1F]" />
+              <span className="h-[1.5px] w-3.5 rounded-full bg-[#1D1D1F]" />
+              <span className="h-[1.5px] w-3.5 rounded-full bg-[#1D1D1F]" />
+            </div>
+          )}
         </button>
       </div>
 

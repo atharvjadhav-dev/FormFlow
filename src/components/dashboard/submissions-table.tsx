@@ -3,8 +3,7 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { bulkUpdateStatus } from '@/app/dashboard/submissions/actions';
-import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, Eye, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Eye, XCircle, ChevronRight } from 'lucide-react';
 
 export interface SubmissionRow {
   id: string;
@@ -48,19 +47,19 @@ export function SubmissionsTable({ rows }: { rows: SubmissionRow[] }) {
       {/* Bulk Action Capsule Bar */}
       {selected.size > 0 && (
         <div className="flex items-center justify-between gap-2 flex-wrap rounded-2xl border border-black/[0.08] bg-white p-3 shadow-apple backdrop-blur-md">
-          <div className="flex items-center gap-2 px-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#007AFF] text-xs font-bold text-white">
+          <div className="flex items-center gap-2 px-1">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#007AFF] text-[10px] font-bold text-white">
               {selected.size}
             </span>
             <span className="text-xs font-semibold text-[#1D1D1F]">Selected</span>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {STATUSES.map((s) => (
               <button
                 key={s}
                 disabled={isPending}
                 onClick={() => applyBulk(s)}
-                className="rounded-full border border-black/[0.08] bg-[#F5F5F7] px-3 py-1.5 text-xs font-medium text-[#1D1D1F] hover:bg-[#E5E5EA] active:scale-95 transition-all"
+                className="rounded-full border border-black/[0.08] bg-[#F5F5F7] px-2.5 py-1 text-[11px] font-medium text-[#1D1D1F] hover:bg-[#E5E5EA] active:scale-95 transition-all disabled:opacity-50"
               >
                 Mark {s.replace('_', ' ')}
               </button>
@@ -69,8 +68,74 @@ export function SubmissionsTable({ rows }: { rows: SubmissionRow[] }) {
         </div>
       )}
 
-      {/* Modern Table Container */}
-      <div className="overflow-x-auto rounded-3xl border border-black/[0.06] bg-white shadow-apple">
+      {/* Mobile Card View (phones: md:hidden) */}
+      <div className="md:hidden space-y-2.5">
+        <div className="flex items-center justify-between px-1 text-xs text-[#86868B]">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={selected.size === rows.length && rows.length > 0}
+              onChange={toggleAll}
+              className="h-4 w-4 rounded accent-[#007AFF] cursor-pointer"
+            />
+            <span className="font-medium text-[#1D1D1F]">Select all ({rows.length})</span>
+          </label>
+        </div>
+
+        {rows.map((row) => (
+          <div
+            key={row.id}
+            className="rounded-2xl border border-black/[0.06] bg-white p-4 shadow-apple transition-all active:scale-[0.99] flex flex-col gap-3"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <input
+                  type="checkbox"
+                  checked={selected.has(row.id)}
+                  onChange={() => toggle(row.id)}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded accent-[#007AFF] cursor-pointer"
+                  aria-label={`Select ${row.submitterEmail || row.formName}`}
+                />
+                <div className="min-w-0">
+                  <Link
+                    href={`/dashboard/submissions/${row.id}`}
+                    className="block text-sm font-semibold text-[#1D1D1F] hover:text-[#007AFF] truncate transition-colors"
+                  >
+                    {row.submitterEmail ?? 'Anonymous Applicant'}
+                  </Link>
+                  <p className="text-xs text-[#86868B] truncate mt-0.5 font-medium">
+                    {row.formName}
+                  </p>
+                </div>
+              </div>
+              <div className="shrink-0">
+                <StatusPill status={row.status} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-black/[0.04] text-[11px] text-[#86868B]">
+              <span>
+                {new Date(row.submittedAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </span>
+              <Link
+                href={`/dashboard/submissions/${row.id}`}
+                className="inline-flex items-center gap-1 font-semibold text-[#007AFF] hover:underline"
+              >
+                <span>View details</span>
+                <ChevronRight className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table Container (tablets and desktops: hidden md:block) */}
+      <div className="hidden md:block overflow-x-auto rounded-3xl border border-black/[0.06] bg-white shadow-apple">
         <table className="w-full text-left text-xs min-w-[500px]">
           <thead className="bg-[#F5F5F7]/80 text-[11px] font-semibold uppercase tracking-wider text-[#86868B] border-b border-black/[0.06]">
             <tr>
@@ -172,9 +237,8 @@ export function StatusPill({ status }: { status: string }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide ${item.className}`}
     >
-      <Icon className="h-3 w-3" />
-      {item.label}
+      <Icon className="h-3 w-3 shrink-0" />
+      <span>{item.label}</span>
     </span>
   );
 }
-

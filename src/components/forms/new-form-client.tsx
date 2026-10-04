@@ -56,13 +56,13 @@ export function NewFormClient({ templates, initialMode = 'overview' }: NewFormCl
           {/* Top Options: Start from scratch & Create with AI side by side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Option 1: Start from scratch */}
-            <div className="rounded-3xl border border-black/[0.08] bg-white p-6 shadow-xs flex flex-col justify-between gap-6 transition-all hover:border-black/[0.16] hover:shadow-sm">
+            <div className="rounded-3xl border border-black/[0.08] bg-white p-6 shadow-apple flex flex-col justify-between gap-6 transition-all hover:border-black/[0.16]">
               <div className="flex items-start gap-4">
                 <div className="h-12 w-12 rounded-2xl bg-black/[0.04] border border-black/[0.06] flex items-center justify-center text-[#1D1D1F] shrink-0">
                   <Plus className="h-6 w-6 stroke-2" />
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-base font-semibold text-[#1D1D1F]">Start from scratch</h2>
                     <span className="text-[10px] font-medium text-[#86868B] bg-black/[0.04] px-2 py-0.5 rounded-full">
                       Blank canvas
@@ -74,15 +74,17 @@ export function NewFormClient({ templates, initialMode = 'overview' }: NewFormCl
                 </div>
               </div>
 
-              <form action={createForm} className="flex items-center gap-2 pt-2 border-t border-black/[0.04]">
+              <form action={createForm} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-3 border-t border-black/[0.06]">
                 <input
+                  id="new-form-name-input"
                   name="name"
+                  aria-label="Form title"
                   placeholder="Form title (optional)"
-                  className="h-9 flex-1 rounded-xl border border-black/[0.08] bg-[#F5F5F7]/80 px-3 text-xs text-[#1D1D1F] placeholder:text-[#86868B] transition-all hover:border-black/[0.14] focus:border-[#007AFF] focus:bg-white focus:outline-none"
+                  className="h-10 flex-1 rounded-xl border border-black/[0.08] bg-[#F5F5F7]/80 px-3.5 text-xs text-[#1D1D1F] placeholder:text-[#86868B] transition-all hover:border-black/[0.14] focus:border-[#007AFF] focus:bg-white focus:outline-none"
                 />
                 <button
                   type="submit"
-                  className="flex h-9 items-center gap-1.5 rounded-xl bg-[#1D1D1F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-black transition-colors shrink-0"
+                  className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#1D1D1F] px-4 text-xs font-semibold text-white shadow-xs hover:bg-black transition-colors shrink-0"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Create blank</span>
@@ -93,16 +95,16 @@ export function NewFormClient({ templates, initialMode = 'overview' }: NewFormCl
             {/* Option 2: Create with AI */}
             <div
               onClick={() => setActiveView('ai')}
-              className="group cursor-pointer rounded-3xl border border-blue-500/30 bg-linear-to-br from-white via-blue-50/[0.3] to-indigo-50/[0.2] p-6 shadow-xs flex flex-col justify-between gap-6 transition-all hover:border-[#007AFF] hover:shadow-md relative overflow-hidden"
+              className="group cursor-pointer rounded-3xl border border-black/[0.08] bg-white p-6 shadow-apple flex flex-col justify-between gap-6 transition-all hover:border-[#007AFF]"
             >
               <div className="flex items-start gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-linear-to-tr from-blue-500/20 to-purple-500/20 border border-blue-500/30 flex items-center justify-center text-[#007AFF] shrink-0 group-hover:scale-105 transition-transform">
+                <div className="h-12 w-12 rounded-2xl bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center text-[#007AFF] shrink-0 group-hover:scale-105 transition-transform">
                   <Sparkles className="h-6 w-6 stroke-2" />
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-semibold text-[#1D1D1F]">✨ Create with AI</h2>
-                    <span className="text-[10px] font-semibold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-full border border-blue-200">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base font-semibold text-[#1D1D1F]">Create with AI</h2>
+                    <span className="text-[10px] font-semibold text-[#007AFF] bg-[#007AFF]/10 px-2 py-0.5 rounded-full border border-[#007AFF]/20">
                       Gemini Powered
                     </span>
                   </div>
@@ -112,13 +114,13 @@ export function NewFormClient({ templates, initialMode = 'overview' }: NewFormCl
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-blue-500/10">
-                <span className="text-xs font-medium text-[#86868B] group-hover:text-[#1D1D1F] transition-colors">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-black/[0.06]">
+                <span className="text-xs font-medium text-[#86868B] group-hover:text-[#1D1D1F] transition-colors truncate">
                   Try &ldquo;Customer feedback form&rdquo;...
                 </span>
                 <button
                   type="button"
-                  className="flex h-9 items-center gap-1.5 rounded-xl bg-[#007AFF] px-4 text-xs font-semibold text-white shadow-xs group-hover:bg-[#0071E3] transition-colors shrink-0"
+                  className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#007AFF] px-4 text-xs font-semibold text-white shadow-xs group-hover:bg-[#0071E3] transition-colors shrink-0"
                 >
                   <Sparkles className="h-3.5 w-3.5" />
                   <span>Describe your form</span>

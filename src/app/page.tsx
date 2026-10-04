@@ -1,5 +1,6 @@
 import React from 'react';
 import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { getTemplateSummaries } from '@/lib/templates';
 import { Navbar } from '@/components/landing/navbar';
 import { Hero } from '@/components/landing/hero';
@@ -17,8 +18,22 @@ export const metadata = {
   description: 'Design beautiful forms visually, generate them with AI, and publish them with a structured 12-column grid and conditional logic.',
 };
 
-export default async function HomePage() {
-  const { userId } = await auth();
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ landing?: string }>;
+}) {
+  const { userId, orgId } = await auth({ treatPendingAsSignedOut: false });
+  const params = await searchParams;
+
+  // Returning / existing authenticated user: redirect directly to dashboard (or onboarding if no org yet)
+  if (userId && params?.landing !== 'true') {
+    if (!orgId) {
+      redirect('/onboarding');
+    }
+    redirect('/dashboard');
+  }
+
   const templates = getTemplateSummaries();
 
   return (

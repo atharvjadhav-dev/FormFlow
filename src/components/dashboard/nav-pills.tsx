@@ -3,31 +3,23 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-
-const NAV = [
-  { href: '/dashboard', label: 'Overview' },
-  { href: '/dashboard/forms', label: 'Forms' },
-  { href: '/dashboard/submissions', label: 'Submissions' },
-  { href: '/dashboard/analytics', label: 'Analytics' },
-  { href: '/dashboard/team', label: 'Team' },
-  { href: '/dashboard/settings', label: 'Settings' },
-];
+import { DASHBOARD_NAV, isNavActive } from './nav-config';
 
 export function NavPills() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex items-center gap-1 bg-black/[0.03] p-1 rounded-full border border-black/[0.04] shrink-0 whitespace-nowrap">
-      {NAV.map((item) => {
-        const isActive =
-          item.href === '/dashboard'
-            ? pathname === '/dashboard'
-            : pathname.startsWith(item.href);
-
+    <nav
+      aria-label="Dashboard"
+      className="flex items-center gap-1 bg-black/[0.03] p-1 rounded-full border border-black/[0.04] shrink-0 whitespace-nowrap"
+    >
+      {DASHBOARD_NAV.map((item) => {
+        const isActive = isNavActive(pathname, item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
+            aria-current={isActive ? 'page' : undefined}
             className={cn(
               'relative rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ease-out select-none shrink-0',
               isActive

@@ -219,22 +219,22 @@ export function BuilderClient({
   const cleanSlug = publicUrl.replace('/f/', '');
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col bg-[#F5F5F7] text-[#1D1D1F] overflow-hidden">
+    <div className="flex h-[calc(100dvh-3.5rem)] flex-col bg-[#F5F5F7] text-[#1D1D1F] overflow-hidden">
       {/* Clean Studio Navigation Header */}
-      <header className="sticky top-0 z-30 flex h-13 items-center justify-between border-b border-black/[0.06] bg-white/95 px-3 sm:px-5 backdrop-blur-md shrink-0 select-none">
+      <header className="sticky top-0 z-30 flex h-13 items-center justify-between border-b border-black/[0.06] bg-white/95 px-2.5 sm:px-5 backdrop-blur-md shrink-0 select-none">
         {/* Left: Breadcrumbs */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <div className="flex items-center gap-1 sm:gap-2.5 min-w-0">
           <Link
             href="/dashboard/forms"
-            className="flex items-center gap-1 text-xs sm:text-sm font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
+            className="flex items-center gap-1 text-xs sm:text-sm font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors shrink-0"
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="hidden xs:inline">Forms</span>
           </Link>
 
-          <span className="text-black/[0.15]">/</span>
+          <span className="text-black/[0.15] shrink-0">/</span>
 
-          <h1 className="text-xs sm:text-sm font-semibold text-[#1D1D1F] truncate max-w-[100px] sm:max-w-[200px] md:max-w-[260px]">{formName}</h1>
+          <h1 className="text-xs sm:text-sm font-semibold text-[#1D1D1F] truncate max-w-[80px] xs:max-w-[140px] sm:max-w-[200px] md:max-w-[260px]">{formName}</h1>
         </div>
 
         {/* Right: Actions & Tools */}

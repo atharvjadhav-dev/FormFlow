@@ -34,38 +34,38 @@ export default async function FormsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10">
+    <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 py-6 sm:py-10 space-y-6">
       {/* Header & Create bar */}
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#1D1D1F]">Forms</h1>
-          <p className="text-sm text-[#86868B] mt-0.5">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1D1D1F]">Forms</h1>
+          <p className="text-xs sm:text-sm text-[#86868B] mt-0.5">
             Create, publish, and distribute zero-friction forms to applicants
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
           <Link
             href="/dashboard/forms/new?mode=ai"
-            className="flex h-9 items-center gap-1.5 rounded-full border border-blue-500/25 bg-blue-50/50 px-3.5 text-xs font-semibold text-[#007AFF] hover:bg-blue-100/60 transition-colors"
+            className="flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-blue-500/25 bg-blue-50/50 px-3 text-xs font-semibold text-[#007AFF] hover:bg-blue-100/60 transition-colors"
           >
             <span>✨ Create with AI</span>
           </Link>
 
           <Link
             href="/dashboard/forms/new"
-            className="flex h-9 items-center gap-1.5 rounded-full bg-[#007AFF] px-4 text-xs font-semibold text-white shadow-xs hover:bg-[#0071E3] transition-colors"
+            className="flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-[#007AFF] px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-[#0071E3] transition-colors"
           >
             <span>+ Create Form</span>
           </Link>
 
-          <form action={createForm} className="hidden sm:flex items-center gap-2 bg-white p-1 rounded-full border border-black/[0.06] shadow-apple">
+          <form action={createForm} className="hidden lg:flex items-center gap-2 bg-white p-1 rounded-full border border-black/[0.06] shadow-apple">
             <input
               id="quick-create-form-name"
               name="name"
               aria-label="Quick title for blank form"
               placeholder="Quick title..."
-              className="w-36 bg-transparent px-3 text-xs text-[#1D1D1F] placeholder:text-[#86868B] focus:outline-none"
+              className="w-32 bg-transparent px-3 text-xs text-[#1D1D1F] placeholder:text-[#86868B] focus:outline-none"
             />
             <Button type="submit" size="sm" className="rounded-full shadow-xs text-xs h-7 px-3">
               Blank
@@ -76,67 +76,71 @@ export default async function FormsPage() {
 
       {/* Forms Deck */}
       {orgForms.length === 0 ? (
-        <div className="rounded-3xl border border-black/[0.06] py-16 px-6 text-center bg-white shadow-apple">
+        <div className="rounded-3xl border border-black/[0.06] py-12 sm:py-16 px-6 text-center bg-white shadow-apple">
           <div className="mx-auto h-12 w-12 rounded-full bg-black/[0.04] flex items-center justify-center text-[#86868B] mb-3">
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
-          <p className="font-bold text-[#1D1D1F] text-lg">No forms yet</p>
-          <p className="mt-1 text-sm text-[#86868B] max-w-md mx-auto">
-            Type a title in the top bar or click one of the starter templates below to begin.
+          <p className="font-bold text-[#1D1D1F] text-base sm:text-lg">No forms yet</p>
+          <p className="mt-1 text-xs sm:text-sm text-[#86868B] max-w-md mx-auto">
+            Click Create Form or select one of the starter templates below to begin.
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3.5 mb-12">
+        <div className="flex flex-col gap-3">
           {orgForms.map((form) => (
             <div
               key={form.id}
-              className="rounded-3xl border border-black/[0.05] bg-white p-5 shadow-apple shadow-apple-hover flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              className="rounded-2xl sm:rounded-3xl border border-black/[0.05] bg-white p-4 sm:p-5 shadow-apple shadow-apple-hover flex flex-col gap-3.5"
             >
-              <div className="min-w-0">
-                <div className="flex items-center gap-3">
-                  <Link
-                    href={`/dashboard/forms/${form.id}/builder`}
-                    className="font-bold text-[#1D1D1F] hover:text-[#007AFF] transition-colors text-base tracking-tight"
-                  >
-                    {form.name}
-                  </Link>
-                  <StatusBadge status={form.status} startAt={form.startAt} endAt={form.endAt} />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Link
+                      href={`/dashboard/forms/${form.id}/builder`}
+                      className="font-bold text-[#1D1D1F] hover:text-[#007AFF] transition-colors text-sm sm:text-base tracking-tight truncate max-w-full"
+                    >
+                      {form.name}
+                    </Link>
+                    <StatusBadge status={form.status} startAt={form.startAt} endAt={form.endAt} />
+                  </div>
+
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <span className="text-[11px] text-[#86868B] font-mono bg-black/[0.03] px-2 py-0.5 rounded-full truncate max-w-[200px]">
+                      /f/{form.slug}
+                    </span>
+                    {form.status === 'published' && <CopyLinkButton slug={form.slug} compact />}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs text-[#86868B] font-mono bg-black/[0.03] px-2.5 py-0.5 rounded-full">
-                    /f/{form.slug}
-                  </span>
-                  {form.status === 'published' && <CopyLinkButton slug={form.slug} />}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
                 <Link
                   href={`/dashboard/submissions?formId=${form.id}`}
-                  className="rounded-full bg-black/[0.03] hover:bg-black/[0.06] px-3 py-1.5 text-xs font-medium text-[#1D1D1F] transition-colors"
+                  className="self-start sm:self-auto rounded-full bg-black/[0.03] hover:bg-black/[0.06] px-2.5 py-1 text-xs font-medium text-[#1D1D1F] transition-colors"
                 >
                   {form.submissionCount} {form.submissionCount === 1 ? 'submission' : 'submissions'}
                 </Link>
+              </div>
 
-                {form.status === 'published' && (
-                  <ShareDialog formTitle={form.name} slug={form.slug} />
-                )}
+              {/* Action row with clean mobile spacing */}
+              <div className="pt-2.5 border-t border-black/[0.04] flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  {form.status === 'published' && (
+                    <ShareDialog formTitle={form.name} slug={form.slug} compact />
+                  )}
+                  <DeleteFormDialog
+                    formId={form.id}
+                    formName={form.name}
+                    submissionCount={form.submissionCount}
+                  />
+                </div>
 
                 <Link
                   href={`/dashboard/forms/${form.id}/builder`}
-                  className="rounded-full bg-[#007AFF]/10 hover:bg-[#0071E3] hover:text-white text-[#007AFF] px-4 py-1.5 text-xs font-semibold transition-all"
+                  className="rounded-full bg-[#007AFF]/10 hover:bg-[#0071E3] hover:text-white text-[#007AFF] px-3.5 py-1.5 text-xs font-semibold transition-all shrink-0"
                 >
                   Edit in Studio &rarr;
                 </Link>
-
-                <DeleteFormDialog
-                  formId={form.id}
-                  formName={form.name}
-                  submissionCount={form.submissionCount}
-                />
               </div>
             </div>
           ))}
