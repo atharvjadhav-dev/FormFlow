@@ -41,7 +41,7 @@ ENV NODE_ENV=production
 
 # Client-side publishable key for Clerk (public frontend key, not a secret)
 # Allows Next.js static asset compilation and Clerk middleware validation
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_ZGVmaW5pdGUtY3JhbmUtMzI3OC5jbGVyay5hY2NvdW50cy5kZXYk
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 
 # Build the application using the existing production build script

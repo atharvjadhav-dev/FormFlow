@@ -34,8 +34,8 @@ services:
       - APP_DATABASE_URL=postgresql://formflow_app:formflow_app_dev@postgres:5432/formflow
       - SERVICE_DATABASE_URL=postgresql://formflow_service:formflow_service_dev@postgres:5432/formflow
       - STORAGE_DRIVER=local
-      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_ZGVmaW5pdGUtY3JhbmUtMzI3OC5jbGVyay5hY2NvdW50cy5kZXYk}
-      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY:-sk_test_bW8xRFXkHLmWmQU32XXXXlatjDHBHSkfBmgu2fQ2zP}
+      - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
     depends_on:
       postgres:
         condition: service_healthy
