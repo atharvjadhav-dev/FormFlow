@@ -178,6 +178,28 @@ export function generateDeterministicFallbackForm(
 ): RawAiFormSchema {
   const promptLower = userPrompt.toLowerCase();
 
+  if (promptLower.includes('id card') || promptLower.includes('identity') || promptLower.includes('student id')) {
+    return {
+      title: 'College ID Card Application',
+      description: 'Submit your personal details and photo for your official college student ID card.',
+      fields: [
+        { id: 'sec_student', type: 'heading', label: 'Student Identification Details', width: 12, required: false },
+        { id: 'full_name', type: 'text', label: 'Full Legal Name', placeholder: 'Jane Doe', width: 12, required: true },
+        { id: 'student_id', type: 'text', label: 'Student Enrollment / Roll Number', placeholder: 'CS-2026-891', width: 6, required: true },
+        { id: 'department', type: 'dropdown', label: 'Department / Academic Program', options: ['Computer Science & IT', 'Engineering', 'Business Administration', 'Natural Sciences', 'Liberal Arts'], width: 6, required: true },
+        { id: 'email', type: 'email', label: 'College Email Address', placeholder: 'student@university.edu', width: 6, required: true },
+        { id: 'phone', type: 'phone', label: 'Contact Phone Number', placeholder: '+1 (555) 000-0000', width: 6, required: true },
+        { id: 'dob', type: 'date', label: 'Date of Birth', width: 6, required: true },
+        { id: 'blood_group', type: 'dropdown', label: 'Blood Group', options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'], width: 6, required: false },
+        { id: 'sec_photo', type: 'heading', label: 'ID Photo & Verification', width: 12, required: false },
+        { id: 'photo_instructions', type: 'paragraph', label: 'Please upload a clear, front-facing passport photograph with a neutral background.', width: 12, required: false },
+        { id: 'id_photo', type: 'image', label: 'Student Portrait Photo (JPG/PNG)', width: 6, required: true },
+        { id: 'govt_id', type: 'file', label: 'Government ID Proof or Admission Slip (PDF)', width: 6, required: true },
+        { id: 'emergency_contact', type: 'text', label: 'Emergency Contact Person & Phone', placeholder: 'Parent / Guardian (+1 ...)', width: 12, required: true },
+      ],
+    };
+  }
+
   if (promptLower.includes('scholarship') || promptLower.includes('college') || promptLower.includes('student')) {
     return {
       title: 'College Scholarship Application',
@@ -379,7 +401,13 @@ export async function callAiModelForFormSchema(
 
   // 1. Google Gemini Integration (Primary)
   if (geminiKey) {
-    const defaultModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-pro-latest'];
+    // Prioritize ultra-low latency & highly reliable models first
+    const defaultModels = [
+      'gemini-2.5-flash-lite',
+      'gemini-flash-lite-latest',
+      'gemini-2.5-flash',
+      'gemini-3.8-flash',
+    ];
     const candidateModels = process.env.GEMINI_MODEL
       ? Array.from(new Set([process.env.GEMINI_MODEL, ...defaultModels]))
       : defaultModels;
@@ -388,7 +416,8 @@ export async function callAiModelForFormSchema(
 
     for (const model of candidateModels) {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 35000);
+      // 15s per model avoids hanging the UI and allows fast fallback to the next candidate model
+      const timeout = setTimeout(() => controller.abort(), 15000);
 
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
@@ -419,19 +448,24 @@ export async function callAiModelForFormSchema(
         if (!response.ok) {
           const status = response.status;
           if (status === 429) {
-            throw new Error('AI provider rate limit reached. Please wait a moment.');
-          }
-          if (status === 503 || status === 404) {
-            lastError = new Error(`Model ${model} returned ${status}`);
+            console.warn(`[ai-provider] Model ${model} returned 429 quota/rate limit. Checking next candidate model...`);
+            lastError = new Error('AI provider rate limit reached.');
             continue;
           }
-          throw new Error(`AI service responded with status ${status}`);
+          if (status === 503 || status === 404 || status === 500 || status === 502) {
+            console.warn(`[ai-provider] Model ${model} returned HTTP ${status}. Checking next candidate model...`);
+            lastError = new Error(`Model ${model} returned status ${status}`);
+            continue;
+          }
+          lastError = new Error(`AI service responded with status ${status}`);
+          continue;
         }
 
         const json = await response.json();
         const rawText = json.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!rawText) {
-          throw new Error('AI returned an empty response.');
+          lastError = new Error('AI returned an empty response.');
+          continue;
         }
 
         const parsed = extractJsonFromModelResponse(rawText);
@@ -439,17 +473,17 @@ export async function callAiModelForFormSchema(
       } catch (err: any) {
         clearTimeout(timeout);
         if (err.name === 'AbortError') {
-          throw new Error('AI generation timed out. Please try again.');
+          console.warn(`[ai-provider] Model ${model} timed out after 15s. Checking next candidate model...`);
+          lastError = new Error('AI generation timed out. Please try again.');
+          continue;
         }
         lastError = err;
-        if (err.message?.includes('rate limit')) {
-          throw err;
-        }
+        console.warn(`[ai-provider] Error calling model ${model}:`, err.message);
       }
     }
 
     if (lastError) {
-      console.warn('[ai-provider] Gemini API call failed:', lastError.message);
+      console.warn('[ai-provider] All Gemini API models failed:', lastError.message);
       if (!openaiKey) {
         if (process.env.MOCK_AI === 'true' || process.env.NODE_ENV === 'test' || process.env.NODE_ENV !== 'production') {
           console.warn('[ai-provider] Falling back to deterministic mock generator in non-production environment');
@@ -463,7 +497,7 @@ export async function callAiModelForFormSchema(
   // 2. OpenAI Integration (Optional Backup)
   if (openaiKey) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 35000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
 
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -503,12 +537,12 @@ export async function callAiModelForFormSchema(
       return parsed as RawAiFormSchema;
     } catch (err: any) {
       clearTimeout(timeout);
-      if (err.name === 'AbortError') {
-        throw new Error('AI generation timed out. Please try again.');
-      }
       console.warn('[ai-provider] OpenAI call error:', err.message);
       if (process.env.MOCK_AI === 'true' || process.env.NODE_ENV === 'test' || process.env.NODE_ENV !== 'production') {
         return generateDeterministicFallbackForm(userPrompt, options);
+      }
+      if (err.name === 'AbortError') {
+        throw new Error('AI generation timed out. Please try again.');
       }
       throw err;
     }

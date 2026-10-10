@@ -148,15 +148,19 @@ export function validateRawAiOutput(raw: unknown): RawAiFormSchema {
       );
     }
 
-    // Field label is required, but allow fallback to title/name/text, or default for divider
+    // Field label is required, but allow fallback to title/name/text/content/description, or default for layout elements
     let label = typeof field.label === 'string' ? field.label.trim() : '';
     if (!label && typeof field.title === 'string') label = field.title.trim();
     if (!label && typeof field.name === 'string') label = field.name.trim();
     if (!label && typeof field.text === 'string') label = field.text.trim();
+    if (!label && typeof field.content === 'string') label = field.content.trim();
+    if (!label && typeof field.description === 'string') label = field.description.trim();
     if (!label && resolvedType === 'divider') label = 'Divider';
+    if (!label && resolvedType === 'paragraph') label = 'Information';
+    if (!label && resolvedType === 'heading') label = 'Section';
 
     if (!label) {
-      throw new AiSchemaValidationError(`Field at index ${i} is missing a required label.`);
+      label = `Field ${i + 1}`;
     }
 
     // Validate visibleIf structure if present
@@ -188,9 +192,17 @@ export function validateRawAiOutput(raw: unknown): RawAiFormSchema {
       }
     }
 
+    const rawId = typeof field.id === 'string' && field.id.trim()
+      ? field.id.trim()
+      : typeof (field as any).fieldName === 'string' && (field as any).fieldName.trim()
+      ? (field as any).fieldName.trim()
+      : typeof field.name === 'string' && field.name.trim()
+      ? field.name.trim()
+      : undefined;
+
     validatedFields.push({
       ...(field as any),
-      id: typeof field.id === 'string' ? field.id : (typeof field.name === 'string' ? field.name : undefined),
+      id: rawId,
       type: resolvedType,
       label,
     });
@@ -234,10 +246,17 @@ export function normalizeAiSchema(raw: RawAiFormSchema): {
     }
     seenIds.add(tempId);
 
-    // Width normalization: missing or invalid width -> 12
+    // Width normalization: missing or invalid width -> 12 (check width, gridWidth, colSpan)
     let width: FieldWidth = 12;
-    if (typeof field.width === 'number' && VALID_FIELD_WIDTHS.has(field.width as FieldWidth)) {
-      width = field.width as FieldWidth;
+    const rawWidth = typeof field.width === 'number'
+      ? field.width
+      : typeof (field as any).gridWidth === 'number'
+      ? (field as any).gridWidth
+      : typeof (field as any).colSpan === 'number'
+      ? (field as any).colSpan
+      : undefined;
+    if (typeof rawWidth === 'number' && VALID_FIELD_WIDTHS.has(rawWidth as FieldWidth)) {
+      width = rawWidth as FieldWidth;
     }
 
     const label = field.label.trim();
@@ -262,7 +281,12 @@ export function normalizeAiSchema(raw: RawAiFormSchema): {
     if (isChoiceType) {
       if (Array.isArray(field.options) && field.options.length > 0) {
         const cleanOpts = field.options
-          .map((o) => String(o).trim())
+          .map((o) => {
+            if (typeof o === 'object' && o !== null) {
+              return String((o as any).label || (o as any).value || (o as any).text || '').trim();
+            }
+            return String(o).trim();
+          })
           .filter((o) => o.length > 0);
         normalizedField.options = cleanOpts.length > 0 ? cleanOpts : ['Option 1', 'Option 2'];
       } else {
