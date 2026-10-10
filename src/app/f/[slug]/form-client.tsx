@@ -65,7 +65,12 @@ export function PublicFormClient({ slug, formName, orgName, formVersionId, schem
         [fieldId]: { status: 'done', s3Key, fileName: file.name, mimeType: file.type, sizeBytes: file.size },
       }));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Upload failed';
+      const msg =
+        err instanceof Error
+          ? err.message === 'Failed to fetch'
+            ? 'Failed to connect to storage service. Please try again.'
+            : err.message
+          : 'Upload failed';
       console.error('[Upload error]:', err);
       setUploads((prev) => ({ ...prev, [fieldId]: { status: 'error', error: msg } }));
     }
