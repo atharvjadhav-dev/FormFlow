@@ -6,8 +6,9 @@ import { submissions, forms, formVersions, submissionFiles, type FormSchema } fr
 import { createPresignedDownloadUrl } from '@/lib/s3';
 import { StatusPill } from '@/components/dashboard/submissions-table';
 import { StatusForm } from './status-form';
+import { FileAttachmentCard } from './file-attachment-card';
 import { requireOrgAuth } from '@/lib/auth';
-import { ChevronLeft, FileText, Download, Calendar, Mail, UserCheck } from 'lucide-react';
+import { ChevronLeft, Calendar } from 'lucide-react';
 
 export default async function SubmissionDetailPage({ params }: { params: Promise<{ submissionId: string }> }) {
   const { submissionId } = await params;
@@ -103,33 +104,13 @@ export default async function SubmissionDetailPage({ params }: { params: Promise
                       {field.label}
                     </p>
                     {file ? (
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-black/[0.08] bg-[#F5F5F7]/70 p-3 max-w-md">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-[#007AFF] shadow-sm">
-                            <FileText className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-semibold text-[#1D1D1F] truncate">{file.fileName}</p>
-                            <p className="text-[10px] text-[#86868B]">
-                              {Math.round(file.sizeBytes / 1024)} KB
-                            </p>
-                          </div>
-                        </div>
-
-                        {downloadUrls[file.id] ? (
-                          <a
-                            href={downloadUrls[file.id]}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center justify-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-medium text-[#007AFF] shadow-sm border border-black/[0.06] hover:bg-[#F5F5F7] transition-all shrink-0 self-start sm:self-auto"
-                          >
-                            <Download className="h-3 w-3" />
-                            <span>Download</span>
-                          </a>
-                        ) : (
-                          <span className="text-[11px] text-[#86868B]">Stored</span>
-                        )}
-                      </div>
+                      <FileAttachmentCard
+                        fileName={file.fileName}
+                        sizeBytes={file.sizeBytes}
+                        mimeType={file.mimeType}
+                        url={downloadUrls[file.id]}
+                        fieldLabel={field.label}
+                      />
                     ) : (
                       <p className="text-xs text-[#86868B] italic">No file attached</p>
                     )}
